@@ -349,12 +349,15 @@ function persist() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save));
 /* =====================================================================
    Higgsfield GLB models (characters are rigged with a run cycle).
    Over http they load from models-web/ (meshopt-compressed); from file:// they come base64-packed in models.js.
-   Anything that fails to load falls back to the code-built version.
+   Nothing waits for them: the game starts on code-built stand-ins and swaps the models in as they arrive
+   (street scenery first, then characters/obstacles/power-ups). Anything that fails keeps its stand-in.
    ===================================================================== */
 const GLB = {};
+const isScenery = n => n.startsWith('street-') || n.startsWith('pedestrian-');
+let sceneryLoaded, gameLoaded;
 {
   const packed = window.MORCHA_MODELS, names = window.MORCHA_MODEL_NAMES || [], loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
-  await Promise.all(names.map(async name => {
+  const load = list => Promise.all(list.map(async name => {
     try {
       const res = await fetch(packed ? 'data:model/gltf-binary;base64,' + packed[name] : 'models-web/' + name + '.glb');
       if (!res.ok) throw new Error(res.status);
@@ -363,6 +366,8 @@ const GLB = {};
       GLB[name].scene.traverse(o => { if (o.isMesh) { for (const m of [].concat(o.material)) m.metalness = 0; } });   // no env map: metal reads as black
     } catch (e) { console.warn('Model failed to load, using fallback:', name, e); }
   }));
+  sceneryLoaded = load(names.filter(isScenery));
+  gameLoaded = sceneryLoaded.then(() => load(names.filter(n => !isScenery(n))));
   if (!names.length) console.warn('models-list.js missing: using code-built models');
 }
 
@@ -756,13 +761,15 @@ function buildGlbCharacter(id) {
 }
 const rigs = {};
 for (const c of CHARS) { rigs[c.id] = buildGlbCharacter(c.id) || buildCharacter(c.id); rigs[c.id].root.visible = false; scene.add(rigs[c.id].root); }
-const inspector = buildGlbCharacter('inspector') || buildCharacter('inspector'); scene.add(inspector.root);
-if (rigs.guddu.glb) {   // the Higgsfield Guddu lost his placard, so he gets one that follows his right hand
+let inspector = buildGlbCharacter('inspector') || buildCharacter('inspector'); scene.add(inspector.root);
+function addPlacard() {   // the Higgsfield Guddu lost his placard, so he gets one that follows his right hand
+  if (!rigs.guddu.glb || rigs.guddu.placard) return;
   const pl = new THREE.Group();
   pl.add(M(G.cyl, '#8a5a2b', 0, 0.55, 0, 0.035, 1.1, 0.035), M(G.box, COL.plum, 0, 1.2, 0, 1.02, 0.62, 0.03));
   const sign = signMesh(TEX.hmmm, 0.95, 0.55, true); sign.position.set(0, 1.2, 0); pl.add(sign);
   rigs.guddu.placard = pl; scene.add(pl);
 }
+addPlacard();
 // Drive a character: Higgsfield models play their run clip; code-built rigs use procedural poses.
 const _hand = new THREE.Vector3();
 function animate(r, mode, dt, rate, phase) {
@@ -866,7 +873,8 @@ const PROP = {
   pothole:   { name: 'obstacle-pothole',     rotY: 0,            scale: [1.9, 1.9, 1.9],    box: { y0: -1, y1: 0.25, hz: 0.85 }, sink: 0.12 },
   convoy:    { name: 'obstacle-vip-convoy',  rotY: -Math.PI / 2, scale: [2.0, 2.0, 2.4],    box: { y0: 0, y1: 1.5, hz: 1.2 } },
 };
-for (const k in PROP) if (GLB[PROP[k].name]) Object.assign(OB[k], PROP[k].box);
+const fitPropBoxes = () => { for (const k in PROP) if (GLB[PROP[k].name]) Object.assign(OB[k], PROP[k].box); };
+fitPropBoxes();
 function glbProp({ name, rotY = 0, scale = [1, 1, 1], sink = 0 }) {
   const inner = GLB[name].scene.clone(true); inner.rotation.y = rotY;
   const wrap = new THREE.Group(); wrap.add(inner); wrap.scale.set(...scale); wrap.position.y = -sink;
@@ -1109,7 +1117,9 @@ function addDecor(kind, side, x, z, geo, ry = 0) {
   m.position.set(x, kind === 'garland' ? 0 : 0.14, z); scene.add(m);
   decor.push({ m, z, kind, len: 0, ph: rand(0, 6), honked: false, bounce: 0 });
 }
-{
+function buildDecor() {
+  for (const d of decor) { scene.remove(d.m); if (d.kind === 'chunk') d.m.geometry.dispose(); }
+  decor.length = 0; for (const k in chunkParts) delete chunkParts[k];
   const KINDS = [['crowd', 3, 2.5], ['tree', 1.0, 2.6], ['pot', 1.4, 1.0], ['stall', 1.8, 3.4], ['auto', 1.5, 2.4], ['bus', 0.7, 8.4]];
   const total = KINDS.reduce((a, k) => a + k[1], 0);
   const X = { crowd: 6.6, tree: 8.6, pot: 4.5, stall: 6.2, auto: 5.0, bus: 5.6 };
@@ -1140,6 +1150,8 @@ function addDecor(kind, side, x, z, geo, ry = 0) {
     decor.push({ m, z: z0, kind: 'chunk', len: CHUNK_LEN });
   }
 }
+buildDecor();
+sceneryLoaded.then(buildDecor);
 // Pigeons: sit on the sidewalk, scatter when you run past
 const pigeonBody = merge([part(G.sph, '#9a97a8', 0, 0.15, 0, 0.16, 0.14, 0.24), part(G.sph, '#7d7a8e', 0, 0.3, 0.17, 0.09), part(G.cone, '#ff9a3c', 0, 0.29, 0.28, 0.03, 0.08, 0.03, Math.PI / 2, 0, 0), part(G.box, '#6f6c80', 0, 0.17, -0.25, 0.14, 0.03, 0.14)]);
 const pigeons = [];
@@ -1292,8 +1304,11 @@ function resetRun() {
   for (const k in pwEls) pwEls[k].classList.add('hidden');
   camera.position.set(0, camUp, camBack);
 }
+let modelsReady = false, pendingStart = false;
 function startGame() {
   if (!isUnlocked()) return;
+  if (!modelsReady) { pendingStart = true; $('btnPlay').textContent = 'LOADING…'; return; }   // models still on their way
+  pendingStart = false;
   resetRun(); state = 'PLAYING'; menuIdle = 0;
   save.stats.runs++; checkAch(); persist();
   show('hud');
@@ -1951,7 +1966,7 @@ addEventListener('resize', resize);
 resize();
 
 // Pre-warm pools + compile shaders up front so the first spawns don't stutter
-{
+function prewarm() {
   const tmp = [];
   for (const [type, n] of [['barricade', 8], ['sign', 8], ['pothole', 8], ['convoy', 2], ['coin', 60], ['power', 4], ['particle', 160]])
     for (let i = 0; i < n; i++) { const it = pools[type].get(); it.obj.position.set(0, -50, -60); tmp.push([type, it]); }
@@ -1960,12 +1975,28 @@ resize();
   for (const [type, it] of tmp) pools[type].release(it);
   cart.visible = stars.visible = shock.visible = strip.visible = false;
 }
+prewarm();
 
 selectChar(selIdx);
 applyOutfit();
 inspector.root.visible = false;
 show('menu');
 $('loading').remove();
+
+gameLoaded.then(() => {
+  for (const c of CHARS) {
+    const g = buildGlbCharacter(c.id); if (!g) continue;
+    scene.remove(rigs[c.id].root); rigs[c.id] = g; g.root.visible = false; scene.add(g.root);
+  }
+  const insp = buildGlbCharacter('inspector');
+  if (insp) { scene.remove(inspector.root); inspector = insp; inspector.root.visible = false; scene.add(inspector.root); }
+  addPlacard(); fitPropBoxes();
+  if (GLB['powerup-jugaad-thela']) { cart.remove(cart.children[0]); const m = GLB['powerup-jugaad-thela'].scene.clone(true); m.scale.setScalar(1.35); cart.add(m); }
+  for (const type of [...Object.keys(OB), 'power']) { for (const it of pools[type].items) scene.remove(it.obj); pools[type].items.length = 0; }   // drop the stand-in obstacles
+  prewarm(); modelsReady = true;
+  selectChar(selIdx); applyOutfit();
+  if (pendingStart) startGame();
+});
 
 const stats = { frames: 0, ms: 0 };
 let last = performance.now();
