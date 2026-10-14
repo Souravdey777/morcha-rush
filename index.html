@@ -120,6 +120,8 @@ h2{font-size:clamp(40px,11vw,64px);color:var(--pink);-webkit-text-stroke:2px var
 .list{text-align:left;max-height:52vh;overflow:auto;margin:6px 0 12px}
 .list .it{display:flex;gap:10px;align-items:center;background:#fff;border:2px solid var(--plum);border-radius:12px;padding:8px 10px;margin:6px 0}
 .list .it.off{opacity:.55}
+.list h3{font-family:"Arial Black",Impact,sans-serif;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--pink);margin:12px 2px 2px}
+.list h3:first-child{margin-top:0}
 .list .it b{display:block;font-family:"Arial Black",Impact,sans-serif;font-size:15px}
 .list .it small{display:block;font-size:12px;color:#5b4a6b}
 .list .it .em{font-size:26px;flex:none}
@@ -164,7 +166,7 @@ h2{font-size:clamp(40px,11vw,64px);color:var(--pink);-webkit-text-stroke:2px var
         <button class="arrow" id="next" aria-label="Next character">▶</button>
       </div>
       <div class="dots" id="dots"></div>
-      <div class="row mini"><button class="chip" id="btnAch">🏆 <span id="achCount">0/5</span></button><button class="chip" id="btnGrwm">👕 GRWM</button></div>
+      <div class="row mini"><button class="chip" id="btnAch">🏆 <span id="achCount">0/5</span></button><button class="chip" id="btnGrwm">👕 GRWM</button><button class="chip" id="btnHelp">❓ HOW TO PLAY</button></div>
       <button class="btn" id="btnPlay">PLAY ▶</button>
       <div class="stats">Best <b id="mBest">0</b> · Wallet <b id="mCoins">₹ 0</b></div>
       <p class="hint" id="hint"></p>
@@ -222,6 +224,9 @@ h2{font-size:clamp(40px,11vw,64px);color:var(--pink);-webkit-text-stroke:2px var
 
   <div id="achPanel" class="panel hidden" style="justify-content:center;background:rgba(42,27,61,.35)">
     <div class="card"><h2 style="font-size:34px">ACHIEVEMENTS</h2><div class="list" id="achList"></div><button class="btn alt" data-close>CLOSE</button></div>
+  </div>
+  <div id="helpPanel" class="panel hidden" style="justify-content:center;background:rgba(42,27,61,.35)">
+    <div class="card"><h2 style="font-size:34px">HOW TO PLAY</h2><div class="list"><h3>The run</h3><div class="it"><span class="em">🏃</span><div><b>Run the march</b><small>Ring the gate bell and BHAAG! Switch lanes, jump and slide. Collect ₹ coins to unlock new runners.</small></div></div><div class="it"><span class="em">🚨</span><div><b>The Inspector</b><small>Crash once and you stumble: he closes in for a few seconds. Crash again before you recover and he catches you.</small></div></div><div class="it"><span class="em">⌨️</span><div><b>Controls</b><small>Desktop: ← → or A D to switch lanes, ↑ / W to jump, ↓ / S to slide, P to pause. Phone: swipe left, right, up or down.</small></div></div><h3>Obstacles</h3><div class="it"><span class="em">🚧</span><div><b>Barricade</b><small>"Adjusting, please wait." Jump over it.</small></div></div><div class="it"><span class="em">🚫</span><div><b>Section 144 sign</b><small>Slide under it.</small></div></div><div class="it"><span class="em">🕳️</span><div><b>Pothole</b><small>The road budget went somewhere. Jump over it.</small></div></div><div class="it"><span class="em">🧅</span><div><b>Onion cart</b><small>Jump over it. Hit one and you will be in tears.</small></div></div><div class="it"><span class="em">🚓</span><div><b>VIP convoy</b><small>Route diverted. Too big to jump: switch lanes.</small></div></div><div class="it"><span class="em">🚉</span><div><b>Station closed</b><small>Inconvenience regretted. Too tall to jump, no gap to slide: switch lanes.</small></div></div><h3>Power-ups</h3><div class="it"><span class="em">☕</span><div><b>Cutting Chai</b><small>5 seconds of extra speed. You smash through anything in your way.</small></div></div><div class="it"><span class="em">🥁</span><div><b>Dhol Beat</b><small>6 seconds of smashing straight through barricades.</small></div></div><div class="it"><span class="em">📸</span><div><b>Press Pass</b><small>4 seconds of invincibility. EXPOSED!</small></div></div><div class="it"><span class="em">🛺</span><div><b>Jugaad Thela</b><small>Ride a cart that takes one crash for you.</small></div></div><div class="it"><span class="em">🍽️</span><div><b>Steel Thali</b><small>The clatter stuns the Inspector for 3 seconds, and gets you out of a stumble.</small></div></div><h3>Watch out for</h3><div class="it"><span class="em">📘</span><div><b>Required Reading</b><small>A rare book worth +50 coins.</small></div></div><div class="it"><span class="em">🍔</span><div><b>Shiny burger</b><small>Looks like a power-up. It is a trap: bad optics slow you down for 2 seconds.</small></div></div><div class="it"><span class="em">⚡</span><div><b>Bijli Gayi</b><small>Random power cuts plunge the street into darkness for 5 seconds.</small></div></div><div class="it"><span class="em">🪳</span><div><b>The little brown visitor</b><small>Shows up once a run. Tap it for a bonus and an achievement.</small></div></div></div><button class="btn alt" data-close>GOT IT</button></div>
   </div>
   <div id="grwmPanel" class="panel hidden" style="justify-content:center;background:rgba(42,27,61,.35)">
     <div class="card"><h2 style="font-size:40px">GRWM</h2><p class="sub">Get ready with Guddu. Waterproof kajal: lasts longer than most things in Delhi.</p><div class="list" id="grwmList"></div><button class="btn alt" data-close>DONE</button></div>
@@ -1878,6 +1883,7 @@ function renderGrwm() {
 }
 $('btnAch').onclick = () => { renderAch(); openPanel('achPanel'); };
 $('btnGrwm').onclick = () => { renderGrwm(); openPanel('grwmPanel'); selectChar(0); };
+$('btnHelp').onclick = () => openPanel('helpPanel');
 document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => b.closest('.panel').classList.add('hidden'));
 $('grwmList').onclick = e => {
   const buy = e.target.dataset.buy, wear = e.target.dataset.wear || buy;
@@ -1982,6 +1988,7 @@ applyOutfit();
 inspector.root.visible = false;
 show('menu');
 $('loading').remove();
+if (!save.seenHelp) { save.seenHelp = true; persist(); openPanel('helpPanel'); }   // first visit: explain the game once
 
 gameLoaded.then(() => {
   for (const c of CHARS) {
