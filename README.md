@@ -4,7 +4,7 @@
 
 <p align="center">
   <b>Run the march. Outrun the corruption.</b><br>
-  A satirical 3D endless runner through a festive Indian street, with a bribe-hungry Inspector on your heels.
+  A satirical 3D endless runner through a festive Indian street, with a bribe-hungry Daroga Ji on your heels.
 </p>
 
 <p align="center">
@@ -18,7 +18,7 @@
 
 ## About
 
-Morcha Rush is a lane-switching endless runner in the spirit of Subway Surfers, set at a street march (*morcha*). You ring a gate's doorbell, shout "BHAAG!" and run. Dodge barricades, Section 144 signs, potholes and VIP convoys. Grab coins and power-ups. Stumble twice before you recover and the Inspector catches you and demands his *chai-paani*.
+Morcha Rush is a lane-switching endless runner in the spirit of Subway Surfers, set at a street march (*morcha*). You ring a gate's doorbell, shout "BHAAG!" and run. Dodge barricades, Section 144 signs, potholes and VIP convoys. Grab coins and power-ups. Stumble twice before you recover and Daroga Ji catches you and demands his *chai-paani*.
 
 The humour pokes at everyday red tape and petty corruption, never at real people or parties.
 
@@ -26,13 +26,15 @@ It runs in the browser on desktop and mobile, with no install and no build step.
 
 ## Characters
 
-| | Character | Ability | Unlock |
-|---|---|---|---|
-| 🎒 | **Guddu** | A student with a big backpack and a bigger question: where did the road budget go? No special move. | Free |
-| 🩴 | **Dadi-ji** | **Chappal Swat:** automatically swats a barricade out of the way every 8 seconds. | ₹500 |
-| 🥁 | **Dhol Bro** | **Beat Drop:** every landing sends a shockwave that clears obstacles ahead. | ₹1000 |
-| 📸 | **Camera Intern** | **Viral Flash:** every near-miss flashes the camera for +25 points. | ₹2000 |
-| 🪳 | **Cocky** | **Unkillable:** a Gen Z cockroach who shrugs off one crash per run. | ₹3000 |
+| | Character | Bio | Ability | Unlock |
+|---|---|---|---|---|
+| 🎒 | **Guddu** *(RE-EXAM!)* | Third attempt. Second leak. Still has the admit card laminated. | No special move. | Free |
+| 🩴 | **Thali Dadi** *(THAN-THAN!)* | Brought her steel thali from home. Didn't bring it back. | **Chappal Swat:** automatically swats a barricade out of the way every 8 seconds. | ₹500 |
+| 🥁 | **MC Dhol** *(DHAM!)* | Dropped a diss track at the barricade. Dhol is the beat, Jantar Mantar is the studio. | **Beat Drop:** every landing sends a shockwave that clears obstacles ahead. | ₹1000 |
+| 📸 | **Camera Person** *(LIKE & SHARE!)* | Rolling since the first barricade. The reel outlived the minister. | **Viral Flash:** every near-miss flashes the camera for +25 points. | ₹2000 |
+| 🪳 | **Cocky, Founding Member** *(UNBOTHERED!)* | Chronically online, 11 hours a day, bathroom breaks included. Lazy only in the physical sense. | **Unkillable:** shrugs off one crash per run. | ₹3000 |
+
+On your heels: 👮 **Daroga Ji** *(CHALO THANE!)*. Still waiting for your Form 26-A. Attested. Three copies.
 
 <p align="center">
   <img src="screenshots/cocky.jpg" alt="Cocky on the start screen" width="49%">
@@ -47,7 +49,7 @@ It runs in the browser on desktop and mobile, with no install and no build step.
 | 🥁 | Dhol Beat | Smashes barricades |
 | 📸 | Press Pass | Invincible for a few seconds. "EXPOSED!" |
 | 🛺 | Jugaad Thela | Ride a cart that absorbs one crash |
-| 🍽️ | Steel Thali | A clatter that stuns the Inspector |
+| 🍽️ | Steel Thali | Thali Dadi's, borrowed. A clatter that stuns Daroga Ji |
 
 There are also random **Bijli Gayi** power cuts, onion carts that make you cry, achievements, Guddu outfits (GRWM), and a little brown visitor worth catching.
 

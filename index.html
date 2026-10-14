@@ -48,6 +48,10 @@ button{pointer-events:auto;font:inherit;cursor:pointer;border:0;color:inherit;ba
 .cinfo{flex:1;min-width:0}
 .cinfo b{display:block;font-family:"Arial Black",Impact,sans-serif;font-size:clamp(20px,5.4vw,28px)}
 .cinfo small{display:block;font-size:13px;line-height:1.3;color:#5b4a6b;margin-top:2px}
+.cinfo i{display:block;font-size:13px;line-height:1.3;color:var(--plum);margin-top:2px}
+.cinfo i::before{content:"\201C"}.cinfo i::after{content:"\201D"}
+#shout{position:fixed;left:0;top:0;pointer-events:none;background:#fff;color:var(--plum);border:3px solid var(--plum);border-radius:16px;padding:4px 12px;font-family:"Arial Black",Impact,sans-serif;font-size:clamp(16px,4.4vw,22px);white-space:nowrap;box-shadow:0 3px 0 var(--plum);transform-origin:50% 100%}
+#shout::after{content:"";position:absolute;left:50%;bottom:-11px;margin-left:-8px;border:8px solid transparent;border-top-color:var(--plum);border-bottom:0}
 .dots{margin:6px 0 10px;font-size:12px;letter-spacing:4px;color:#b9a8c4}
 .dots i{font-style:normal}.dots i.on{color:var(--pink)}
 .stats{margin-top:10px;font-size:14px;font-weight:700}
@@ -87,7 +91,7 @@ button{pointer-events:auto;font:inherit;cursor:pointer;border:0;color:inherit;ba
 /* ---------- Overlays ---------- */
 #pause,#over{justify-content:center;background:rgba(42,27,61,.35)}
 h2{font-size:clamp(40px,11vw,64px);color:var(--pink);-webkit-text-stroke:2px var(--plum);paint-order:stroke fill;text-shadow:0 4px 0 var(--plum);line-height:1}
-.quip{margin:8px 0 12px;font-weight:700;font-size:15px}
+.quip{margin:8px 0 12px;font-weight:700;font-size:15px;white-space:pre-line}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
 .grid div{background:#fff;border:2px solid var(--plum);border-radius:12px;padding:6px}
 .grid small{display:block;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#6b5a7a}
@@ -144,6 +148,7 @@ h2{font-size:clamp(40px,11vw,64px);color:var(--pink);-webkit-text-stroke:2px var
 <body>
 <canvas id="c"></canvas>
 <img id="idlePic" alt="" hidden>
+<div id="shout" hidden></div>
 
 <div id="ui">
   <div id="pops"></div>
@@ -162,7 +167,7 @@ h2{font-size:clamp(40px,11vw,64px);color:var(--pink);-webkit-text-stroke:2px var
     <div class="card">
       <div class="charsel">
         <button class="arrow" id="prev" aria-label="Previous character">◀</button>
-        <div class="cinfo"><b id="cName">Guddu</b><small id="cAbility"></small></div>
+        <div class="cinfo"><b id="cName">Guddu</b><i id="cBio"></i><small id="cAbility"></small></div>
         <button class="arrow" id="next" aria-label="Next character">▶</button>
       </div>
       <div class="dots" id="dots"></div>
@@ -189,7 +194,7 @@ h2{font-size:clamp(40px,11vw,64px);color:var(--pink);-webkit-text-stroke:2px var
       <div class="pill" id="hCoins">₹ 0</div>
     </div>
     <div class="hud-row2">
-      <div id="insp" title="Inspector distance"><span>👮</span><div class="bar"><div id="inspFill"></div></div></div>
+      <div id="insp" title="Daroga Ji distance"><span>👮</span><div class="bar"><div id="inspFill"></div></div></div>
       <div class="pill small" id="ability"></div>
       <div class="pill small" id="hScore">★ 0</div>
     </div>
@@ -199,7 +204,7 @@ h2{font-size:clamp(40px,11vw,64px);color:var(--pink);-webkit-text-stroke:2px var
   <div id="pause" class="panel hidden">
     <div class="card">
       <h2>PAUSED</h2>
-      <p class="quip">Havaldar-ji is collecting his "chai-paani".</p>
+      <p class="quip">Daroga Ji is collecting his "chai-paani".</p>
       <p class="sub" id="pauseTip"></p>
       <div class="row"><button class="btn alt" id="btnResume">RESUME</button><button class="btn" id="btnQuit">MENU</button></div>
     </div>
@@ -226,7 +231,7 @@ h2{font-size:clamp(40px,11vw,64px);color:var(--pink);-webkit-text-stroke:2px var
     <div class="card"><h2 style="font-size:34px">ACHIEVEMENTS</h2><div class="list" id="achList"></div><button class="btn alt" data-close>CLOSE</button></div>
   </div>
   <div id="helpPanel" class="panel hidden" style="justify-content:center;background:rgba(42,27,61,.35)">
-    <div class="card"><h2 style="font-size:34px">HOW TO PLAY</h2><div class="list"><h3>The run</h3><div class="it"><span class="em">🏃</span><div><b>Run the march</b><small>Ring the gate bell and BHAAG! Switch lanes, jump and slide. Collect ₹ coins to unlock new runners.</small></div></div><div class="it"><span class="em">🚨</span><div><b>The Inspector</b><small>Crash once and you stumble: he closes in for a few seconds. Crash again before you recover and he catches you.</small></div></div><div class="it"><span class="em">⌨️</span><div><b>Controls</b><small>Desktop: ← → or A D to switch lanes, ↑ / W to jump, ↓ / S to slide, P to pause. Phone: swipe left, right, up or down.</small></div></div><h3>Obstacles</h3><div class="it"><span class="em">🚧</span><div><b>Barricade</b><small>"Adjusting, please wait." Jump over it.</small></div></div><div class="it"><span class="em">🚫</span><div><b>Section 144 sign</b><small>Slide under it.</small></div></div><div class="it"><span class="em">🕳️</span><div><b>Pothole</b><small>The road budget went somewhere. Jump over it.</small></div></div><div class="it"><span class="em">🧅</span><div><b>Onion cart</b><small>Jump over it. Hit one and you will be in tears.</small></div></div><div class="it"><span class="em">🚓</span><div><b>VIP convoy</b><small>Route diverted. Too big to jump: switch lanes.</small></div></div><div class="it"><span class="em">🚉</span><div><b>Station closed</b><small>Inconvenience regretted. Too tall to jump, no gap to slide: switch lanes.</small></div></div><h3>Power-ups</h3><div class="it"><span class="em">☕</span><div><b>Cutting Chai</b><small>5 seconds of extra speed. You smash through anything in your way.</small></div></div><div class="it"><span class="em">🥁</span><div><b>Dhol Beat</b><small>6 seconds of smashing straight through barricades.</small></div></div><div class="it"><span class="em">📸</span><div><b>Press Pass</b><small>4 seconds of invincibility. EXPOSED!</small></div></div><div class="it"><span class="em">🛺</span><div><b>Jugaad Thela</b><small>Ride a cart that takes one crash for you.</small></div></div><div class="it"><span class="em">🍽️</span><div><b>Steel Thali</b><small>The clatter stuns the Inspector for 3 seconds, and gets you out of a stumble.</small></div></div><h3>Watch out for</h3><div class="it"><span class="em">📘</span><div><b>Required Reading</b><small>A rare book worth +50 coins.</small></div></div><div class="it"><span class="em">🍔</span><div><b>Shiny burger</b><small>Looks like a power-up. It is a trap: bad optics slow you down for 2 seconds.</small></div></div><div class="it"><span class="em">⚡</span><div><b>Bijli Gayi</b><small>Random power cuts plunge the street into darkness for 5 seconds.</small></div></div><div class="it"><span class="em">🪳</span><div><b>The little brown visitor</b><small>Shows up once a run. Tap it for a bonus and an achievement.</small></div></div></div><button class="btn alt" data-close>GOT IT</button></div>
+    <div class="card"><h2 style="font-size:34px">HOW TO PLAY</h2><div class="list"><h3>The run</h3><div class="it"><span class="em">🏃</span><div><b>Run the march</b><small>Ring the gate bell and BHAAG! Switch lanes, jump and slide. Collect ₹ coins to unlock new runners.</small></div></div><div class="it"><span class="em">🚨</span><div><b>Daroga Ji</b><small>Crash once and you stumble: he closes in for a few seconds. Crash again before you recover and he catches you.</small></div></div><div class="it"><span class="em">⌨️</span><div><b>Controls</b><small>Desktop: ← → or A D to switch lanes, ↑ / W to jump, ↓ / S to slide, P to pause. Phone: swipe left, right, up or down.</small></div></div><h3>Obstacles</h3><div class="it"><span class="em">🚧</span><div><b>Barricade</b><small>"Adjusting, please wait." Jump over it.</small></div></div><div class="it"><span class="em">🚫</span><div><b>Section 144 sign</b><small>Slide under it.</small></div></div><div class="it"><span class="em">🕳️</span><div><b>Pothole</b><small>The road budget went somewhere. Jump over it.</small></div></div><div class="it"><span class="em">🧅</span><div><b>Onion cart</b><small>Jump over it. Hit one and you will be in tears.</small></div></div><div class="it"><span class="em">🚓</span><div><b>VIP convoy</b><small>Route diverted. Too big to jump: switch lanes.</small></div></div><div class="it"><span class="em">🚉</span><div><b>Station closed</b><small>Inconvenience regretted. Too tall to jump, no gap to slide: switch lanes.</small></div></div><h3>Power-ups</h3><div class="it"><span class="em">☕</span><div><b>Cutting Chai</b><small>5 seconds of extra speed. You smash through anything in your way.</small></div></div><div class="it"><span class="em">🥁</span><div><b>Dhol Beat</b><small>6 seconds of smashing straight through barricades.</small></div></div><div class="it"><span class="em">📸</span><div><b>Press Pass</b><small>4 seconds of invincibility. EXPOSED!</small></div></div><div class="it"><span class="em">🛺</span><div><b>Jugaad Thela</b><small>Ride a cart that takes one crash for you.</small></div></div><div class="it"><span class="em">🍽️</span><div><b>Steel Thali</b><small>Thali Dadi's, borrowed. The clatter stuns Daroga Ji for 3 seconds, and gets you out of a stumble.</small></div></div><h3>Watch out for</h3><div class="it"><span class="em">📘</span><div><b>Required Reading</b><small>A rare book worth +50 coins.</small></div></div><div class="it"><span class="em">🍔</span><div><b>Shiny burger</b><small>Looks like a power-up. It is a trap: bad optics slow you down for 2 seconds.</small></div></div><div class="it"><span class="em">⚡</span><div><b>Bijli Gayi</b><small>Random power cuts plunge the street into darkness for 5 seconds.</small></div></div><div class="it"><span class="em">🪳</span><div><b>The little brown visitor</b><small>Shows up once a run. Tap it for a bonus and an achievement.</small></div></div></div><button class="btn alt" data-close>GOT IT</button></div>
   </div>
   <div id="grwmPanel" class="panel hidden" style="justify-content:center;background:rgba(42,27,61,.35)">
     <div class="card"><h2 style="font-size:40px">GRWM</h2><p class="sub">Get ready with Guddu. Waterproof kajal: lasts longer than most things in Delhi.</p><div class="list" id="grwmList"></div><button class="btn alt" data-close>DONE</button></div>
@@ -306,13 +311,14 @@ const pick = arr => arr[(Math.random() * arr.length) | 0];
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const damp = (a, b, k, dt) => a + (b - a) * (1 - Math.exp(-k * dt));
 
-const CHARS = [
-  { id:'guddu',  name:'Guddu',         ability:'Student. Big backpack, bigger question: where did the road budget go? No special move.' },
-  { id:'dadi',   name:'Dadi-ji',       ability:'Heard "kal aana" for 60 years. Chappal Swat: auto-swats a barricade every 8s. THWACK!' },
-  { id:'dhol',   name:'Dhol Bro',      ability:'Too loud to bribe. Beat Drop: every landing sends a shockwave that clears obstacles ahead.' },
-  { id:'intern', name:'Camera Intern', ability:'Exposes scams for a living. Viral Flash: every near-miss flashes the camera for +25.' },
-  { id:'cocky',  name:'Cocky',         ability:'Gen Z cockroach. Survived every scheme, every scam, every "kal aana". Unkillable: shrugs off one crash per run.' },
+const CHARS = [   // bio = personality, shout = catchphrase (pops at their signature moment), ability = gameplay
+  { id:'guddu',  name:'Guddu',                  shout:'RE-EXAM!',      bio:'Third attempt. Second leak. Still has the admit card laminated.', ability:'No special move. Just hope.' },
+  { id:'dadi',   name:'Thali Dadi',             shout:'THAN-THAN!',    bio:'Brought her steel thali from home. Didn\'t bring it back.', ability:'Chappal Swat: auto-swats a barricade every 8s.' },
+  { id:'dhol',   name:'MC Dhol',                shout:'DHAM!',         bio:'Dropped a diss track at the barricade. Dhol is the beat, Jantar Mantar is the studio.', ability:'Beat Drop: every landing sends a shockwave that clears obstacles ahead.' },
+  { id:'intern', name:'Camera Person',          shout:'LIKE & SHARE!', bio:'Rolling since the first barricade. The reel outlived the minister.', ability:'Viral Flash: every near-miss flashes the camera for +25.' },
+  { id:'cocky',  name:'Cocky, Founding Member', shout:'UNBOTHERED!',   bio:'Chronically online, 11 hours a day, bathroom breaks included. Lazy only in the physical sense.', ability:'Unkillable: shrugs off one crash per run.' },
 ];
+const DAROGA = { name: 'Daroga Ji', shout: 'CHALO THANE!', bio: 'Still waiting for your Form 26-A. Attested. Three copies.' };
 const QUIPS = [   // game-over lines: satire of everyday corruption, never of real people or parties
   'Chai-paani ke bina file nahi hilegi.', 'Road budget: ₹10 crore. Road: 🕳️',
   'Your file went "missing". Again.', 'Setting ho jayegi... for a small fee.',
@@ -324,11 +330,11 @@ const INSPECTOR_LINES = ['FORM 26-A?! Certificate of Patriotism, attested!', 'Ru
 const TIPS = [
   'Pro players train 11 hours a day. Bathroom breaks included.', 'Waterproof kajal: lasts longer than most things in Delhi.',
   'Single? The morcha is the new dating app.', 'Lazy refers only to physical activity. Your thumbs are exempt.',
-  'Shiny burgers are bad optics. Just saying.', 'Steel thali + spoon = 3 seconds of peace from Havaldar-ji.',
+  'Shiny burgers are bad optics. Just saying.', 'Steel thali + spoon = 3 seconds of peace from Daroga Ji.',
 ];
 const ACH = [   // id, emoji, name, description, progress(stat) → [have, need]
-  { id: 'cardio', e: '💦', name: 'Thanks for the Cardio', desc: 'Escape the Inspector 100 times.', prog: () => [save.stats.escapes, 100] },
-  { id: 'member', e: '🪳', name: 'Honorary Member', desc: 'Catch the little brown visitor.', prog: () => [save.ach.member ? 1 : 0, 1] },
+  { id: 'cardio', e: '💦', name: 'Thanks for the Cardio', desc: 'Escape Daroga Ji 100 times.', prog: () => [save.stats.escapes, 100] },
+  { id: 'member', e: '🪳', name: 'Honorary Member', desc: 'Catch the little brown visitor. Cocky is recruiting.', prog: () => [save.ach.member ? 1 : 0, 1] },
   { id: 'ding', e: '🔔', name: 'Ding-Dong-Ditch', desc: 'Start 50 runs.', prog: () => [save.stats.runs, 50] },
   { id: 'handle', e: '📱', name: 'New Handle Who Dis', desc: 'Revive 10 times.', prog: () => [save.stats.revives, 10] },
   { id: 'online', e: '🛋️', name: 'Chronically Online', desc: 'Play 11 hours in total.', prog: () => [Math.floor(save.stats.playSec / 3600), 11] },
@@ -1286,6 +1292,7 @@ function selectChar(i) {
   for (const id in rigs) rigs[id].root.visible = false;
   if (rigs.guddu.placard) rigs.guddu.placard.visible = false;   // re-shown by animate() only while Guddu is active
   player.rig = rigs[CHARS[selIdx].id]; player.rig.root.visible = true;
+  shoutEl.textContent = CHARS[selIdx].shout; shoutT = 2.4;
   if (save.unlocked.includes(CHARS[selIdx].id)) { save.selected = CHARS[selIdx].id; persist(); }
   refreshMenu();
 }
@@ -1346,7 +1353,7 @@ function gameOver() {
   $('oScore').textContent = s.toLocaleString(); $('oDist').textContent = Math.floor(dist) + ' m'; $('oCoins').textContent = '₹ ' + coinsRun;
   const withheld = Math.random() < 0.3;   // alt screen: the runner gets 'withheld in your region'
   $('oTitle').textContent = withheld ? 'WITHHELD' : 'DETAINED!';
-  $('quip').textContent = withheld ? 'This runner has been withheld in your region.' : 'Chalo thane. ' + pick(QUIPS);
+  $('quip').textContent = withheld ? 'This runner has been withheld in your region.' : DAROGA.name + ': "' + DAROGA.bio + '"\n' + pick(QUIPS);
   $('btnRevive').classList.toggle('hidden', revived);
   $('oBest').textContent = save.best.toLocaleString();
   $('newBest').classList.toggle('hidden', !isBest);
@@ -1460,7 +1467,7 @@ function dholShock() {
 function dadiSwat() {
   for (const ob of pools.barricade.items) {
     if (ob.active && !ob.dead && ob.lane === player.lane && ob.z > -14 && ob.z < -2.5) {
-      knock(ob, 'THWACK!'); player.swingT = 0.4; player.dadiCD = CONFIG.DADI_COOLDOWN; SFX.smash(); return;
+      knock(ob, 'THAN-THAN!'); player.swingT = 0.4; player.dadiCD = CONFIG.DADI_COOLDOWN; SFX.smash(); return;
     }
   }
 }
@@ -1491,7 +1498,7 @@ function hit(ob) {
   if (player.cockyLife) {   // cockroaches survive everything, once
     player.cockyLife = false; player.invulnT = CONFIG.INVULN_AFTER_HIT; shakeT = 0.3; SFX.smash();
     burst(player.x, 0.5, 0, 16, ['#6b3b1f', '#c8a2e8', '#ffffff'], { speed: 6, up: 5, size: 0.2, life: 0.9 });
-    pop('UNKILLABLE!', player.x, 2, 0, 'teal'); return;
+    pop('UNBOTHERED!', player.x, 2, 0, 'teal'); return;
   }
   if (ob.type === 'onion') tears();
   if (player.stumbleT > 0 && power.thali <= 0) { caught(); return; }
@@ -1537,7 +1544,7 @@ function updatePlaying(dt) {
   if (introT > 0) {   // Ding-Dong-Ditch: press the gate's doorbell, then BHAAG!
     const before = introT; introT -= dt; ws = 0;
     if (before > 0.8 && introT <= 0.8) { pop('DING-DONG!', -4.2, 2.6, -0.5, 'white'); SFX.ding(); }
-    if (before > 0.25 && introT <= 0.25) { pop('BHAAG!', player.x, 2.4, -2, 'pink'); beep(660, 0.1, 'triangle', 0.06); beep(880, 0.14, 'triangle', 0.06, 0, 0.1); }
+    if (before > 0.25 && introT <= 0.25) { pop(CHARS[selIdx].id === 'guddu' ? 'RE-EXAM!' : 'BHAAG!', player.x, 2.4, -2, 'pink'); beep(660, 0.1, 'triangle', 0.06); beep(880, 0.14, 'triangle', 0.06, 0, 0.1); }
     return;
   }
   runT += dt;
@@ -1640,7 +1647,7 @@ function updateEntities(dt) {
       ob.passed = true;
       const nearMiss = !ob.hit && (ob.lane === player.lane || (Math.abs(ob.lane - player.lane) === 1 && runT - player.lastSwitch < CONFIG.NEAR_MISS_LANE_TIME));
       if (nearMiss && type === 'onion') tears();
-      if (nearMiss && CHARS[selIdx].id === 'intern') { bonus += CONFIG.INTERN_BONUS; flash(); SFX.flash(); pop('VIRAL! +' + CONFIG.INTERN_BONUS, player.x, 2.4, -1, 'teal'); }
+      if (nearMiss && CHARS[selIdx].id === 'intern') { bonus += CONFIG.INTERN_BONUS; flash(); SFX.flash(); pop('LIKE & SHARE! +' + CONFIG.INTERN_BONUS, player.x, 2.4, -1, 'teal'); }
     }
   }
   // convoy warning: flashing lane strip + banner
@@ -1742,7 +1749,7 @@ function updateWorld(dt) {
 
 // Menu idle: show the character's concept art (art/*.webp cutouts) standing where the 3D model would be.
 const IDLE_ART = { guddu: 'guddu', dadi: 'dadi-ji', dhol: 'dhol-bro', intern: 'camera-intern', cocky: 'cocky' };
-const idlePic = $('idlePic'), _feet = new THREE.Vector3(), _top = new THREE.Vector3();
+const idlePic = $('idlePic'), shoutEl = $('shout'), _feet = new THREE.Vector3(), _top = new THREE.Vector3();
 function showIdlePic(id, H) {
   const name = IDLE_ART[id];
   if (!name || idlePic.dataset.bad === name) return false;
@@ -1754,16 +1761,23 @@ function showIdlePic(id, H) {
   idlePic.style.width = w + 'px'; idlePic.style.height = h + 'px';
   idlePic.style.transform = `translate(${x - w / 2}px, ${y - h}px) rotate(${Math.sin(t * 2.4) * 2}deg) scaleY(${1 + Math.abs(Math.sin(t * 2.4)) * 0.02})`;
   idlePic.hidden = false;
+  shoutEl.hidden = !(shoutT > 0);
+  if (shoutT > 0) {
+    const pop = Math.min(1, (2.4 - shoutT) * 6);   // spring in
+    shoutEl.style.transform = `translate(calc(${x}px - 50%), ${y - h * 1.02 - shoutEl.offsetHeight}px) scale(${0.6 + pop * 0.4}) rotate(-3deg)`;
+  }
   return true;
 }
+let shoutT = 0;
 function updateCharacters(dt) {
+  shoutT -= dt;
   const r = player.rig, playing = state === 'PLAYING' || state === 'CAUGHT';
   if (state === 'MENU' && showIdlePic(CHARS[selIdx].id, r.H || 2)) {
     r.root.visible = false; r.picHidden = true; phone.visible = cape.visible = false;
     if (r.placard) r.placard.visible = false;
     return;
   }
-  idlePic.hidden = true;
+  idlePic.hidden = shoutEl.hidden = true;
   if (r.picHidden) { r.root.visible = true; r.picHidden = false; }
   updateCape(r);
   if (state === 'MENU') {
@@ -1859,6 +1873,7 @@ function update(dt) {
 function refreshMenu() {
   const c = CHARS[selIdx], cost = CONFIG.UNLOCK_COST[c.id], unlocked = isUnlocked();
   $('cName').textContent = (unlocked ? '' : '🔒 ') + c.name;
+  $('cBio').textContent = c.bio;
   $('cAbility').textContent = c.ability;
   $('dots').innerHTML = CHARS.map((_, i) => `<i class="${i === selIdx ? 'on' : ''}">●</i>`).join('');
   const b = $('btnPlay');
