@@ -28,10 +28,11 @@ html,body{height:100%;overflow:hidden;background:#ffc9a3;color:var(--plum);
 button{pointer-events:auto;font:inherit;cursor:pointer;border:0;color:inherit;background:none}
 .btn{background:var(--pink);color:#fff;border:3px solid var(--plum);border-radius:16px;padding:.5em 1.3em;
   font-size:clamp(18px,4.6vw,26px);box-shadow:0 5px 0 var(--plum);transition:transform .08s,box-shadow .08s;letter-spacing:.5px}
-.btn:active{transform:translateY(4px);box-shadow:0 1px 0 var(--plum)}
+.btn:active:not(:disabled){transform:translateY(4px);box-shadow:0 1px 0 var(--plum)}
 .btn.alt{background:var(--teal)}
 .btn.gold{background:var(--saffron)}
-.btn:disabled{filter:grayscale(.6);opacity:.75;cursor:default}
+#oPurse{margin:0 0 10px}
+.btn:disabled{filter:grayscale(1);opacity:.55;cursor:not-allowed}
 .card{pointer-events:auto;background:rgba(255,248,236,.95);border:3px solid var(--plum);border-radius:22px;
   box-shadow:0 6px 0 var(--plum);padding:14px 16px;width:min(440px,100%);text-align:center}
 
@@ -239,7 +240,8 @@ h2{font-size:clamp(40px,11vw,64px);color:var(--pink);-webkit-text-stroke:2px var
         <div><small>Coins</small><b id="oCoins">₹ 0</b></div>
         <div><small>Best</small><b id="oBest">0</b></div>
       </div>
-      <button class="btn" id="btnRevive" style="width:100%;margin-bottom:10px">📱 MAKE NEW HANDLE</button>
+      <div class="stats" id="oPurse">Wallet <b id="oPurseAmt">₹ 0</b></div>
+      <button class="btn" id="btnRevive" style="width:100%;margin-bottom:10px"></button>
       <div class="row"><button class="btn alt" id="btnRestart">RESTART</button><button class="btn gold" id="btnMenu">MENU</button></div>
       <p class="sub" id="oWallet"></p>
     </div>
@@ -249,7 +251,7 @@ h2{font-size:clamp(40px,11vw,64px);color:var(--pink);-webkit-text-stroke:2px var
     <div class="card"><h2 style="font-size:34px">ACHIEVEMENTS</h2><div class="list" id="achList"></div><button class="btn alt" data-close>CLOSE</button></div>
   </div>
   <div id="helpPanel" class="panel hidden" style="justify-content:center;background:rgba(42,27,61,.35)">
-    <div class="card"><h2 style="font-size:34px">HOW TO PLAY</h2><div class="list"><h3>The run</h3><div class="it"><span class="em">🏃</span><div><b>Run the march</b><small>Ring the gate bell and BHAAG! Switch lanes, jump and slide. Collect ₹ coins to unlock new runners.</small></div></div><div class="it"><span class="em">🚨</span><div><b>Daroga Ji</b><small>Crash once and you stumble: he closes in for a few seconds. Crash again before you recover and he catches you.</small></div></div><div class="it"><span class="em">⌨️</span><div><b>Controls</b><small>Desktop: ← → or A D to switch lanes, ↑ / W to jump, ↓ / S to slide, P to pause. Phone: swipe left, right, up or down.</small></div></div><h3>Obstacles</h3><div class="it"><span class="em">🚧</span><div><b>Barricade</b><small>"Adjusting, please wait." Jump over it.</small></div></div><div class="it"><span class="em">🚫</span><div><b>Section 144 sign</b><small>Slide under it.</small></div></div><div class="it"><span class="em">🕳️</span><div><b>Pothole</b><small>The road budget went somewhere. Jump over it.</small></div></div><div class="it"><span class="em">🧅</span><div><b>Onion cart</b><small>Jump over it. Hit one and you will be in tears.</small></div></div><div class="it"><span class="em">🚓</span><div><b>VIP convoy</b><small>Route diverted. Too big to jump: switch lanes.</small></div></div><div class="it"><span class="em">🚉</span><div><b>Station closed</b><small>Inconvenience regretted. Too tall to jump, no gap to slide: switch lanes.</small></div></div><h3>Power-ups</h3><div class="it"><span class="em">☕</span><div><b>Cutting Chai</b><small>5 seconds of extra speed. You smash through anything in your way.</small></div></div><div class="it"><span class="em">🥁</span><div><b>Dhol Beat</b><small>6 seconds of smashing straight through barricades.</small></div></div><div class="it"><span class="em">📸</span><div><b>Press Pass</b><small>4 seconds of invincibility. EXPOSED!</small></div></div><div class="it"><span class="em">🛺</span><div><b>Jugaad Thela</b><small>Ride a cart that takes one crash for you.</small></div></div><div class="it"><span class="em">🍽️</span><div><b>Steel Thali</b><small>Thali Dadi's, borrowed. The clatter stuns Daroga Ji for 3 seconds, and gets you out of a stumble.</small></div></div><h3>Watch out for</h3><div class="it"><span class="em">📘</span><div><b>Required Reading</b><small>A rare book worth +50 coins.</small></div></div><div class="it"><span class="em">🍔</span><div><b>Shiny burger</b><small>Looks like a power-up. It is a trap: bad optics slow you down for 2 seconds.</small></div></div><div class="it"><span class="em">⚡</span><div><b>Bijli Gayi</b><small>Random power cuts plunge the street into darkness for 5 to 15 seconds.</small></div></div><div class="it"><span class="em">🪳</span><div><b>The little brown visitor</b><small>Shows up once a run. Tap it for a bonus and an achievement.</small></div></div></div><button class="btn alt" data-close>GOT IT</button></div>
+    <div class="card"><h2 style="font-size:34px">HOW TO PLAY</h2><div class="list"><h3>The run</h3><div class="it"><span class="em">🏃</span><div><b>Run the march</b><small>Ring the gate bell and BHAAG! Switch lanes, jump and slide. Collect ₹ coins to unlock new runners.</small></div></div><div class="it"><span class="em">🚨</span><div><b>Daroga Ji</b><small>Crash once and you stumble: he closes in for a few seconds. Crash again before you recover and he catches you. Caught? Pay him ₹500 from your wallet to carry on, once per run.</small></div></div><div class="it"><span class="em">⌨️</span><div><b>Controls</b><small>Desktop: ← → or A D to switch lanes, ↑ / W to jump, ↓ / S to slide, P to pause. Phone: swipe left, right, up or down.</small></div></div><h3>Obstacles</h3><div class="it"><span class="em">🚧</span><div><b>Barricade</b><small>"Adjusting, please wait." Jump over it.</small></div></div><div class="it"><span class="em">🚫</span><div><b>Section 144 sign</b><small>Slide under it.</small></div></div><div class="it"><span class="em">🕳️</span><div><b>Pothole</b><small>The road budget went somewhere. Jump over it.</small></div></div><div class="it"><span class="em">🧅</span><div><b>Onion cart</b><small>Jump over it. Hit one and you will be in tears.</small></div></div><div class="it"><span class="em">🚓</span><div><b>VIP convoy</b><small>Route diverted. Too big to jump: switch lanes.</small></div></div><div class="it"><span class="em">🚉</span><div><b>Station closed</b><small>Inconvenience regretted. Too tall to jump, no gap to slide: switch lanes.</small></div></div><h3>Power-ups</h3><div class="it"><span class="em">☕</span><div><b>Cutting Chai</b><small>5 seconds of extra speed. You smash through anything in your way.</small></div></div><div class="it"><span class="em">🥁</span><div><b>Dhol Beat</b><small>6 seconds of smashing straight through barricades.</small></div></div><div class="it"><span class="em">📸</span><div><b>Press Pass</b><small>4 seconds of invincibility. EXPOSED!</small></div></div><div class="it"><span class="em">🛺</span><div><b>Jugaad Thela</b><small>Ride a cart that takes one crash for you.</small></div></div><div class="it"><span class="em">🍽️</span><div><b>Steel Thali</b><small>Thali Dadi's, borrowed. The clatter stuns Daroga Ji for 3 seconds, and gets you out of a stumble.</small></div></div><h3>Watch out for</h3><div class="it"><span class="em">📘</span><div><b>Required Reading</b><small>A rare book worth +50 coins.</small></div></div><div class="it"><span class="em">🍔</span><div><b>Shiny burger</b><small>Looks like a power-up. It is a trap: bad optics slow you down for 2 seconds.</small></div></div><div class="it"><span class="em">⚡</span><div><b>Bijli Gayi</b><small>Random power cuts plunge the street into darkness for 5 to 15 seconds.</small></div></div><div class="it"><span class="em">🪳</span><div><b>The little brown visitor</b><small>Shows up once a run. Tap it for a bonus and an achievement.</small></div></div></div><button class="btn alt" data-close>GOT IT</button></div>
   </div>
   <div id="grwmPanel" class="panel hidden" style="justify-content:center;background:rgba(42,27,61,.35)">
     <div class="card"><h2 style="font-size:40px">GRWM</h2><p class="sub">Get ready with Guddu. Waterproof kajal: lasts longer than most things in Delhi.</p><div class="list" id="grwmList"></div><button class="btn alt" data-close>DONE</button></div>
@@ -315,6 +317,7 @@ const CONFIG = {
   DADI_COOLDOWN: 8,         // Dadi-ji's chappal swat recharge (seconds)
   DHOL_SHOCK_RANGE: 7,      // Dhol Bro's landing shockwave reach (units ahead)
   INTERN_BONUS: 25,         // Camera Intern near-miss bonus
+  BRIBE_COST: 500,         // ₹ from the wallet to bribe Daroga Ji and carry on (once per run)
   UNLOCK_COST: { guddu: 0, dadi: 500, dhol: 1000, intern: 2000, cocky: 3000 },
   REDUCED_MOTION: matchMedia('(prefers-reduced-motion: reduce)').matches,   // teary screen: no wobble, light blur
   STREET_DENSITY: matchMedia('(pointer:coarse)').matches ? 0.65 : 1,   // sidewalk props/walkers; lower = faster on phones
@@ -357,7 +360,7 @@ const ACH = [   // id, emoji, name, description, progress(stat) → [have, need]
   { id: 'cardio', e: '💦', name: 'Thanks for the Cardio', desc: 'Escape Daroga Ji 100 times.', prog: () => [save.stats.escapes, 100] },
   { id: 'member', e: '🪳', name: 'Honorary Member', desc: 'Catch the little brown visitor. Cocky is recruiting.', prog: () => [save.ach.member ? 1 : 0, 1] },
   { id: 'ding', e: '🔔', name: 'Ding-Dong-Ditch', desc: 'Start 50 runs.', prog: () => [save.stats.runs, 50] },
-  { id: 'handle', e: '📱', name: 'New Handle Who Dis', desc: 'Revive 10 times.', prog: () => [save.stats.revives, 10] },
+  { id: 'handle', e: '💸', name: 'Setting Ho Gayi', desc: 'Bribe Daroga Ji 10 times.', prog: () => [save.stats.revives, 10] },
   { id: 'online', e: '🛋️', name: 'Chronically Online', desc: 'Play 11 hours in total.', prog: () => [Math.floor(save.stats.playSec / 3600), 11] },
 ];
 const OUTFITS = [   // Guddu's GRWM wardrobe
@@ -1354,12 +1357,12 @@ function goMenu() {
   const r = player.rig.root; r.position.set(0, 0, 0); r.rotation.set(0, 0, 0); r.visible = true;
   inspector.root.visible = false; gate.visible = roach.obj.visible = false; setLight(1); $('bijli').classList.add('hidden'); menuIdle = 0; show('menu'); refreshMenu();
 }
-function revive() {   // 'Make new handle': once per run, carry on from where you were detained
-  if (state !== 'GAMEOVER' || revived) return;
-  revived = true; save.stats.revives++; checkAch(); persist();
+function revive() {   // Rishwat: pay Daroga Ji from the wallet, once per run, and carry on from where you were detained
+  if (state !== 'GAMEOVER' || revived || save.totalCoins < CONFIG.BRIBE_COST) return;
+  save.totalCoins -= CONFIG.BRIBE_COST; revived = true; save.stats.revives++; checkAch(); persist();
   for (const type of Object.keys(OB)) for (const ob of pools[type].items) if (ob.active && ob.z > -30) pools[type].release(ob);
   player.stumbleT = 0; player.invulnT = 2; player.y = 0; player.vy = 0; player.onGround = true; inspZ = CONFIG.INSPECTOR_FAR_Z;
-  speed = Math.max(CONFIG.START_SPEED, speed * 0.8); state = 'PLAYING'; show('hud'); pop('NEW HANDLE WHO DIS?', player.x, 2.4, -1, 'teal'); SFX.power();
+  speed = Math.max(CONFIG.START_SPEED, speed * 0.8); state = 'PLAYING'; show('hud'); pop('SETTING HO GAYI!', player.x, 2.4, -1, 'teal'); SFX.power();
 }
 function pauseGame() { if (state !== 'PLAYING') return; state = 'PAUSED'; $('pauseTip').textContent = '💡 ' + pick(TIPS); show('pause'); persist(); }
 function resumeGame() { if (state !== 'PAUSED') return; state = 'PLAYING'; show('hud'); }
@@ -1377,10 +1380,13 @@ function gameOver() {
   const withheld = Math.random() < 0.3;   // alt screen: the runner gets 'withheld in your region'
   $('oTitle').textContent = withheld ? 'WITHHELD' : 'DETAINED!';
   $('quip').textContent = withheld ? 'This runner has been withheld in your region.' : DAROGA.name + ': "' + DAROGA.bio + '"\n' + pick(QUIPS);
-  $('btnRevive').classList.toggle('hidden', revived);
+  const rb = $('btnRevive'), short = CONFIG.BRIBE_COST - save.totalCoins;
+  rb.classList.toggle('hidden', revived); rb.disabled = short > 0;
+  rb.textContent = short > 0 ? `Chai-paani: ₹ ${CONFIG.BRIBE_COST} (need ₹ ${short} more)` : `Chai-paani do, chhoot jao · ₹ ${CONFIG.BRIBE_COST}`;
   $('oBest').textContent = save.best.toLocaleString();
   $('newBest').classList.toggle('hidden', !isBest);
-  $('oWallet').textContent = `Wallet: ₹ ${save.totalCoins} · Best distance ${save.bestDist} m · Space to restart`;
+  $('oPurseAmt').textContent = '₹ ' + save.totalCoins;
+  $('oWallet').textContent = `Best distance ${save.bestDist} m · Space to restart`;
   show('over');
 }
 function toast(msg) { const el = $('toast'); el.textContent = msg; el.classList.remove('hidden', 'go'); void el.offsetWidth; el.classList.add('go'); }
@@ -2070,7 +2076,7 @@ function frame(now) {
 requestAnimationFrame(frame);
 
 // Small debug handle (handy for tuning in the console): MR.stats, MR.state
-window.MR = { THREE, GLB, revive, catchRoach, roach, get introT() { return introT; }, set nextBijli(v) { nextBijli = v; }, get bijliT() { return bijliT; }, applyOutfit, get state() { return state; }, stats, pools, step(n = 60, dt = 1 / 60) { for (let i = 0; i < n; i++) if (state !== 'PAUSED') update(dt); renderer.render(scene, camera); }, input: { moveLane, jump, slide }, spawnObstacle, activatePower, clear: () => { for (const p of allPools) p.releaseAll(); spawnZ = -125; }, player, power, get coins() { return coinsRun; }, get score() { return score(); }, save, startGame, goMenu, get dist() { return dist; }, set speed(v) { speed = v; }, forceHit: () => hit({ type: 'barricade', hit: false, dead: false, lane: 0, obj: { position: new THREE.Vector3() } }), renderer };
+window.MR = { THREE, GLB, revive, catchRoach, roach, get introT() { return introT; }, set nextBijli(v) { nextBijli = v; }, get bijliT() { return bijliT; }, applyOutfit, get state() { return state; }, stats, pools, step(n = 60, dt = 1 / 60) { for (let i = 0; i < n; i++) if (state !== 'PAUSED') update(dt); renderer.render(scene, camera); }, input: { moveLane, jump, slide }, spawnObstacle, activatePower, clear: () => { for (const p of allPools) p.releaseAll(); spawnZ = -125; }, player, power, get coins() { return coinsRun; }, get score() { return score(); }, save, startGame, goMenu, get dist() { return dist; }, set speed(v) { speed = v; }, forceHit: () => hit({ type: 'barricade', def: OB.barricade, hit: false, dead: false, lane: 0, obj: { position: new THREE.Vector3() } }), renderer };
 </script>
 <script>
 // If the module never boots (offline: Three.js comes from a CDN), say so instead of showing a blank screen.
