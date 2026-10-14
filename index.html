@@ -282,6 +282,7 @@ h2{font-size:clamp(40px,11vw,64px);color:var(--pink);-webkit-text-stroke:2px var
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 
 /* =====================================================================
    CONFIG: every gameplay number lives here. Tweak freely.
@@ -1255,7 +1256,7 @@ const DECOR_GLB = {
   pot:    { names: ['street-marigold-planter', 'decor-marigold-pot'], size: 1.1, face: 'road' },
   tree:   { names: ['decor-neem-tree'], size: 6.0, face: 'road' },
   haveli: { names: ['decor-haveli-a', 'decor-haveli-b', 'decor-haveli-c'], size: 11, face: 'road' },
-  crowd:  { names: ['decor-marcher-a', 'decor-marcher-b', 'decor-marcher-c'], size: 1.9, face: 'road', count: 2 },
+  crowd:  { names: ['pedestrian-shopper', 'pedestrian-office-goer'], size: 1.85, face: 'road', count: 2 },   // the pedestrians, legs straightened, cheering
 };
 // Pavement walkers: `fwd` is the direction the model faces in its file.
 const WALKERS = [
@@ -1272,6 +1273,32 @@ function glbClone(name, size) {
 // weight ramps in from hip to knee, split front/back by which side of the hip a vertex sits, feet apart along their facing axis.
 // Dog: below the belly each limb is its own mesh piece; each swings from where it meets the body, diagonal pairs together.
 const legGeo = {}, ss = THREE.MathUtils.smoothstep;
+// Random outfits: each figure gets its own hue shift for each clothing part, found in the texture by [hue from, hue to,
+// min saturation] (sRGB, 0-1). torso: the colour is also the skin's, so only count it on the torso (see legRig).
+const DRESS = {
+  'pedestrian-shopper': [[0.42, 0.6, 0.2], [0.86, 0.99, 0.25]],                    // teal kameez + salwar, pink dupatta
+  'pedestrian-office-goer': [[0.78, 0.97, 0.1], [0.03, 0.1, 0.45, 'torso']],       // plum trousers, orange shirt
+  runner: [[0.13, 0.95, 0.25]],                                                     // game characters in the crowd: everything but skin tones
+};
+function dressMat(base, name) {
+  const m = base.clone(), parts = DRESS[name], shift = { value: parts.map(() => Math.random()) }, f = v => v.toFixed(3);
+  m.customProgramCacheKey = () => name;
+  m.onBeforeCompile = sh => {
+    sh.uniforms.uShift = shift;
+    if (parts.some(q => q[3])) {
+      sh.vertexShader = 'attribute float torso;\nvarying float vTorso;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvTorso = torso;');
+      sh.fragmentShader = 'varying float vTorso;\n' + sh.fragmentShader;
+    }
+    sh.fragmentShader = `uniform float uShift[${parts.length}];\n` + sh.fragmentShader.replace('#include <map_fragment>', `#include <map_fragment>
+      { vec3 c = pow(max(diffuseColor.rgb, 0.0), vec3(1.0 / 2.2)); vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
+        vec4 q = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g)), r = mix(vec4(q.xyw, c.r), vec4(c.r, q.yzx), step(q.x, c.r));
+        float d = r.x - min(r.w, r.y); vec3 h = vec3(abs(r.z + (r.w - r.y) / (6.0 * d + 1e-10)), d / (r.x + 1e-10), r.x); float h0 = h.x;
+        ${parts.map(([a, b, sat, torso], i) => `if (h0 > ${f(a)} && h0 < ${f(b)} && h.y > ${f(sat)}${torso ? ' && vTorso > 0.5' : ''}) h.x = fract(h0 + uShift[${i}]);`).join('\n        ')}
+        vec3 p = abs(fract(h.xxx + vec3(1.0, 2.0 / 3.0, 1.0 / 3.0)) * 6.0 - 3.0);
+        diffuseColor.rgb = pow(h.z * mix(vec3(1.0), clamp(p - 1.0, 0.0, 1.0), h.y), vec3(2.2)); }`);
+  };
+  return m;
+}
 function legRig(name, m, fwd) {
   let mesh; m.traverse(o => { if (o.isMesh && !mesh) mesh = o; }); if (!mesh) return null;
   const L = legGeo[name] ||= (() => {
@@ -1283,7 +1310,13 @@ function legRig(name, m, fwd) {
     for (let t = 0; t < ia.length; t += 3) for (let a = 0; a < 3; a++) adj[weld[ia[t + a]]].push(weld[ia[t + (a + 1) % 3]], weld[ia[t + (a + 2) % 3]]);
     const lab = new Int32Array(N).fill(-1), flood = (v, top, l) => { const st = [v], out = [v]; lab[v] = l; while (st.length) for (const u of adj[st.pop()]) if (lab[u] < 0 && P[u * 3 + 1] < top) { lab[u] = l; st.push(u); out.push(u); } return out; };
     const si = new Uint16Array(n * 4), sw = new Float32Array(n * 4), bones = [], done = axis => {
-      g.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(si, 4)); g.setAttribute('skinWeight', new THREE.Float32BufferAttribute(sw, 4)); return { g, bones, axis };
+      g.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(si, 4)); g.setAttribute('skinWeight', new THREE.Float32BufferAttribute(sw, 4));
+      const torso = new Float32Array(n), Y = f => bb.min.y + H * f;   // for DRESS parts that share their colour with skin: belt to collar,
+      for (let i = 0; i < n; i++) {                                  // sleeves only above the elbow; forearms and hands (x: fore/aft swing) left out
+        const y = p.getY(i), ax = Math.abs(p.getX(i)), az = Math.abs(p.getZ(i));
+        torso[i] = +(y > Y(0.4) && y < Y(0.75) && (ax < H * 0.12 && (az < H * 0.11 || y > Y(0.61)) || ax < H * 0.17 && y > Y(0.66)));
+      }
+      g.setAttribute('torso', new THREE.BufferAttribute(torso, 1)); return { g, bones, axis };
     };
     if (fwd === '-z') {
       const top = bb.min.y + H * 0.3, below = top - H * 0.1;
@@ -1307,16 +1340,45 @@ function legRig(name, m, fwd) {
     for (const sg of [1, -1]) bones.push({ at: [0, hip, 0], amp: sg * S, lp: Math.PI / 2, rest: sg * S });   // legs pass at the bob's peak
     return done('z');
   })();
-  const root = new THREE.Bone(), legs = L.bones.map(b => { const o = new THREE.Bone(); o.position.fromArray(b.at); root.add(o); return o; }), sk = new THREE.SkinnedMesh(L.g, mesh.material);
+  const root = new THREE.Bone(), legs = L.bones.map(b => { const o = new THREE.Bone(); o.position.fromArray(b.at); root.add(o); return o; }), sk = new THREE.SkinnedMesh(L.g, DRESS[name] ? dressMat(mesh.material, name) : mesh.material);
   sk.position.copy(mesh.position); sk.quaternion.copy(mesh.quaternion); sk.scale.copy(mesh.scale); sk.add(root);
   mesh.parent.add(sk); mesh.removeFromParent(); m.updateMatrixWorld(true); sk.bind(new THREE.Skeleton([root, ...legs]));
   return { legs, gait: L.bones, axis: L.axis };
 }
+// The roadside crowd: the game's own runners, recoloured, cheering or standing. Until they load it's the pedestrians.
+const CROWD = ['guddu', 'dadi', 'dhol', 'intern', 'cocky'];
+function crowdRunner(id) {
+  const r = rigs[id], pose = pick(['caught', 'caught', 'stand']), P = r.poses[pose] ||= bakePose(r, pose);
+  const m = SkeletonUtils.clone(r.model), g = new THREE.Group();
+  for (const [b, q] of P.q) m.getObjectByName(b.name)?.quaternion.copy(q);
+  m.position.y += r.H / 2 + P.dy; m.rotation.y = rand(-0.4, 0.4); g.add(m); g.updateMatrixWorld(true);
+  m.traverse(o => {
+    if (!o.isMesh) return;
+    o.castShadow = false;
+    if (o.material.map) o.material = dressMat(o.material, 'runner');
+    if (o.isSkinnedMesh) { o.computeBoundingSphere(); o.frustumCulled = true; }   // posed once, so the bounds hold
+  });
+  return g;
+}
 function glbDecor(kind, side) {
+  const runners = kind === 'crowd' ? CROWD.filter(id => rigs[id].glb) : [];
+  if (runners.length) {
+    const g = new THREE.Group();
+    for (let i = 0; i < 2; i++) { const m = crowdRunner(pick(runners)); m.position.x = (i - 0.5) * 1.0; g.add(m); }
+    g.rotation.y = side < 0 ? Math.PI / 2 : -Math.PI / 2; return g;
+  }
   const spec = DECOR_GLB[kind], names = spec ? spec.names.filter(n => GLB[n]) : [];
   if (!names.length) return null;
   const g = new THREE.Group(), n = spec.count || 1;
-  for (let i = 0; i < n; i++) { const m = glbClone(pick(names), spec.size); if (spec.thin) { m.scale.x *= spec.thin; m.scale.z *= spec.thin; } m.position.x = (i - (n - 1) / 2) * 0.9; g.add(m); }
+  for (let i = 0; i < n; i++) {
+    const name = pick(names), m = glbClone(name, spec.size), w = WALKERS.find(v => v.name === name);
+    if (spec.thin) { m.scale.x *= spec.thin; m.scale.z *= spec.thin; }
+    if (w) {   // a walker standing still: turn to face +Z, straighten the frozen stride
+      m.rotation.y = w.fwd === '-x' ? Math.PI / 2 : -Math.PI / 2; m.rotation.y += rand(-0.3, 0.3);
+      const r = legRig(name, m, w.fwd); r?.legs.forEach((b, j) => { b.rotation[r.axis] = -r.gait[j].rest; });
+    }
+    m.position.x = (i - (n - 1) / 2) * 0.9; g.add(m);
+  }
   g.rotation.y = spec.rotY ?? (side < 0 ? Math.PI / 2 : -Math.PI / 2);
   return g;
 }
@@ -2188,6 +2250,7 @@ gameLoaded.then(() => {
   fitPropBoxes();
   if (GLB['powerup-jugaad-thela']) { cart.remove(cart.children[0]); const m = GLB['powerup-jugaad-thela'].scene.clone(true); m.scale.setScalar(1.35); cart.add(m); }
   for (const type of [...Object.keys(OB), 'power']) { for (const it of pools[type].items) scene.remove(it.obj); pools[type].items.length = 0; }   // drop the stand-in obstacles
+  buildDecor();   // the crowd switches to the runners
   prewarm(); modelsReady = true;
   selectChar(selIdx);
   if (pendingStart) startGame();
