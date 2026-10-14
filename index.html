@@ -778,11 +778,10 @@ function addPlacard() {   // the Higgsfield Guddu lost his placard, so he gets o
   const pl = new THREE.Group();
   pl.add(M(G.cyl, '#8a5a2b', 0, 0.55, 0, 0.035, 1.1, 0.035), M(G.box, COL.plum, 0, 1.2, 0, 1.02, 0.62, 0.03));
   const sign = signMesh(TEX.hmmm, 0.95, 0.55, true); sign.position.set(0, 1.2, 0); pl.add(sign);
-  rigs.guddu.placard = pl; rigs.guddu.body.add(pl);   // rides on the body, so it flips and leans with him
+  rigs.guddu.placard = pl; rigs.guddu.body.add(pl);   // rides in his backpack, so it flips and leans with him
 }
 addPlacard();
 // Drive a character: Higgsfield models play their run clip; code-built rigs use procedural poses.
-const _hand = new THREE.Vector3();
 function animate(r, mode, dt, rate, phase) {
   if (!r.glb) { poseRig(r, phase, mode); return; }
   r.action.timeScale = rate; r.mixer.update(dt);
@@ -792,9 +791,9 @@ function animate(r, mode, dt, rate, phase) {
   else if (mode === 'idle') r.body.position.y = r.H / 2 + Math.abs(Math.sin(phase)) * 0.08;
   if (r.placard) {
     r.placard.visible = r.root.visible && mode !== 'slide';
-    if (r.placard.visible) {   // held up beside his right shoulder; a damped share of the arm swing keeps it lively without clipping
-      r.root.updateMatrixWorld(true); r.body.worldToLocal(r.hand.getWorldPosition(_hand));
-      r.placard.position.set(-0.62, 0.3 + (_hand.y - 0.2) * 0.35, 0.05 + (_hand.z - 0.4) * 0.12);
+    if (r.placard.visible) {   // stuck in his backpack, leaning with his run, board just above his head
+      r.placard.position.set(-0.12, 0.45, 0.14);
+      r.placard.rotation.set(0.32, 0, Math.sin(phase) * 0.06);
     }
   }
 }
@@ -864,7 +863,7 @@ const PICKUP_GEO = {
     part(G.cyl, '#5bbf4a', 0, -0.04, 0, 0.44, 0.03, 0.44), part(G.cyl, '#d9963f', 0, -0.1, 0, 0.4, 0.08, 0.4)]),
   book: merge([part(G.box, '#2346a8', 0, 0, 0, 0.5, 0.66, 0.12), part(G.box, '#fff8ec', 0.03, 0, 0, 0.44, 0.62, 0.1), part(G.box, '#e0b02a', -0.02, 0.18, 0.062, 0.3, 0.04, 0.005), part(G.box, '#e0b02a', -0.02, 0.1, 0.062, 0.2, 0.025, 0.005), part(G.sphLo, '#e0b02a', -0.02, -0.12, 0.062, 0.09, 0.09, 0.01)]),
 };
-GEO.coin = new THREE.CylinderGeometry(0.4, 0.4, 0.1, 20); GEO.coin.rotateX(Math.PI / 2); GEO.coin.clearGroups();   // one material = one draw call per coin
+GEO.coin = new THREE.CylinderGeometry(0.4, 0.4, 0.1, 20); GEO.coin.rotateX(Math.PI / 2); GEO.coin.rotateZ(Math.PI / 2); GEO.coin.clearGroups();   // rotateZ stands the ₹ upright   // one material = one draw call per coin
 const coinMats = new THREE.MeshLambertMaterial({ map: TEX.coin, emissive: '#3a2200' });
 GEO.ring = new THREE.TorusGeometry(0.62, 0.06, 8, 28);
 const LIGHT = { r: new THREE.MeshBasicMaterial({ color: '#ff2040' }), b: new THREE.MeshBasicMaterial({ color: '#2a6bff' }) };
@@ -1666,7 +1665,7 @@ function updateEntities(dt) {
   // coins
   for (const c of pools.coin.items) {
     if (!c.active) continue;
-    c.z += ws * dt; c.obj.position.set(c.x, c.y + Math.sin(t * 4 + c.z) * 0.08, c.z); c.obj.rotation.y += dt * 4;
+    c.z += ws * dt; c.obj.position.set(c.x, c.y + Math.sin(t * 4 + c.z) * 0.08, c.z); c.obj.rotation.y = Math.sin(t * 3) * 0.5;   // face the player, wobble in sync
     if (c.z > 8) { pools.coin.release(c); continue; }
     if (playing && Math.abs(c.z) < 0.8 && Math.abs(c.x - player.x) < 0.9 && c.y > pBot - 0.3 && c.y < pTop + 0.3) {
       coinsRun++; pools.coin.release(c); SFX.coin();
