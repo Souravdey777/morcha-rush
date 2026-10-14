@@ -316,7 +316,7 @@ const CHARS = [   // bio = personality, shout = catchphrase (pops at their signa
   { id:'dadi',   name:'Thali Dadi',             shout:'THAN-THAN!',    bio:'Brought her steel thali from home. Didn\'t bring it back.', ability:'Chappal Swat: auto-swats a barricade every 8s.' },
   { id:'dhol',   name:'MC Dhol',                shout:'DHAM!',         bio:'Dropped a diss track at the barricade. Dhol is the beat, Jantar Mantar is the studio.', ability:'Beat Drop: every landing sends a shockwave that clears obstacles ahead.' },
   { id:'intern', name:'Camera Person',          shout:'LIKE & SHARE!', bio:'Rolling since the first barricade. The reel outlived the minister.', ability:'Viral Flash: every near-miss flashes the camera for +25.' },
-  { id:'cocky',  name:'Cocky, Founding Member', shout:'UNBOTHERED!',   bio:'Chronically online, 11 hours a day, bathroom breaks included. Lazy only in the physical sense.', ability:'Unkillable: shrugs off one crash per run.' },
+  { id:'cocky',  name:'Cocky',                  shout:'UNBOTHERED!',   bio:'Chronically online, 11 hours a day, bathroom breaks included. Lazy only in the physical sense.', ability:'Unkillable: shrugs off one crash per run.' },
 ];
 const DAROGA = { name: 'Daroga Ji', shout: 'CHALO THANE!', bio: 'Still waiting for your Form 26-A. Attested. Three copies.' };
 const QUIPS = [   // game-over lines: satire of everyday corruption, never of real people or parties
@@ -778,7 +778,7 @@ function addPlacard() {   // the Higgsfield Guddu lost his placard, so he gets o
   const pl = new THREE.Group();
   pl.add(M(G.cyl, '#8a5a2b', 0, 0.55, 0, 0.035, 1.1, 0.035), M(G.box, COL.plum, 0, 1.2, 0, 1.02, 0.62, 0.03));
   const sign = signMesh(TEX.hmmm, 0.95, 0.55, true); sign.position.set(0, 1.2, 0); pl.add(sign);
-  rigs.guddu.placard = pl; scene.add(pl);
+  rigs.guddu.placard = pl; rigs.guddu.body.add(pl);   // rides on the body, so it flips and leans with him
 }
 addPlacard();
 // Drive a character: Higgsfield models play their run clip; code-built rigs use procedural poses.
@@ -792,7 +792,10 @@ function animate(r, mode, dt, rate, phase) {
   else if (mode === 'idle') r.body.position.y = r.H / 2 + Math.abs(Math.sin(phase)) * 0.08;
   if (r.placard) {
     r.placard.visible = r.root.visible && mode !== 'slide';
-    if (r.placard.visible) { r.root.updateMatrixWorld(true); r.hand.getWorldPosition(_hand); r.placard.position.copy(_hand); r.placard.quaternion.copy(r.root.quaternion); }
+    if (r.placard.visible) {   // held up beside his right shoulder; a damped share of the arm swing keeps it lively without clipping
+      r.root.updateMatrixWorld(true); r.body.worldToLocal(r.hand.getWorldPosition(_hand));
+      r.placard.position.set(-0.62, 0.3 + (_hand.y - 0.2) * 0.35, 0.05 + (_hand.z - 0.4) * 0.12);
+    }
   }
 }
 
