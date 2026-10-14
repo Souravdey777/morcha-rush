@@ -311,6 +311,7 @@ const CONFIG = {
   ONION_WEIGHT: 0.12,       // share of normal obstacles that are onion carts
   BIJLI_EVERY: [35, 70],    // seconds between 'Bijli Gayi' power cuts (after 400 m)
   BIJLI_TIME: [5, 15],      // seconds of darkness (random per power cut)
+  BIJLI_TEAR_GAP: 4.5,      // no power cut while the teary screen is up, or for this many seconds after it
   ROACH_WINDOW: [150, 700], // the little brown visitor appears once per run somewhere in this distance range (m)
   ROACH_BONUS: 100,
   CHAI_SPEED_MULT: 1.5,
@@ -1307,7 +1308,7 @@ const SFX = {
 let state = 'MENU';            // MENU → PLAYING ⇄ PAUSED → CAUGHT → GAMEOVER → (PLAYING | MENU)
 let selIdx = Math.max(0, CHARS.findIndex(c => c.id === save.selected));
 let t = 0, runT = 0, speed = 0, ws = 0, dist = 0, coinsRun = 0, bonus = 0, spawnZ = 0, shakeT = 0, caughtT = 0, caughtSpeed = 0;
-let chaseT = 0, chaseBeat = 0, introT = 0, revived = false, coinsBanked = 0, bijliT = 0, bijliDark = 0, nextBijli = 0, menuIdle = 0, persistT = 0;
+let chaseT = 0, chaseBeat = 0, introT = 0, revived = false, coinsBanked = 0, bijliT = 0, bijliDark = 0, tearsEnd = -99, nextBijli = 0, menuIdle = 0, persistT = 0;
 let inspZ = CONFIG.INSPECTOR_FAR_Z, inspX = 0, runPhase = 0, warnOn = false, steamT = 0, lastLanding = 0;
 const power = { chai: 0, dhol: 0, press: 0, thali: 0, slow: 0 };
 const player = { lane: 0, x: 0, y: 0, vy: 0, onGround: true, slideT: 0, stumbleT: 0, invulnT: 0, lastSwitch: -9, thela: false,
@@ -1332,7 +1333,7 @@ function resetRun() {
     jumpBuf: 0, slideBuf: false, cockyLife: CHARS[selIdx].id === 'cocky', dadiCD: 2, swingT: 0, landT: 0, prevX: 0 });
   inspZ = CONFIG.INSPECTOR_FAR_Z; inspX = 0; warnOn = false;
   strip.visible = shock.visible = cart.visible = stars.visible = false;
-  introT = 1.2; revived = false; coinsBanked = 0; bijliT = 0; nextBijli = rand(...CONFIG.BIJLI_EVERY); setLight(1); $('bijli').classList.add('hidden');
+  introT = 1.2; revived = false; coinsBanked = 0; bijliT = 0; tearsEnd = -99; nextBijli = rand(...CONFIG.BIJLI_EVERY); setLight(1); $('bijli').classList.add('hidden');
   player.lane = -1; player.x = laneX(-1); gate.visible = true; gate.position.set(-4.7, 0.14, -0.5);
   roach.active = false; roach.done = false; roach.obj.visible = false; roach.at = rand(...CONFIG.ROACH_WINDOW);
   $('warn').classList.add('hidden'); $('insp').classList.remove('hot');
@@ -1406,6 +1407,7 @@ function rowGap() {
   return speed * time * rand(0.9, 1.2);
 }
 function spawnObstacle(type, lane, z) {
+  if (type === 'onion' && bijliT > 0) type = 'barricade';   // no onion carts during Bijli Gayi
   const ob = pools[type].get();
   ob.lane = lane; ob.z = z; ob.hit = false; ob.dead = false; ob.passed = false; ob.extra = type === 'convoy' ? CONFIG.CONVOY_EXTRA_SPEED : 0; ob.warned = false;
   ob.obj.position.set(laneX(lane), 0, z); ob.obj.rotation.set(0, 0, 0);
@@ -1516,7 +1518,8 @@ function tears() {
   const el = $('tears');
   const line = tearPicker.pick(CHARS[selIdx].id);
   el.querySelector('.bubble').textContent = line;
-  el.style.setProperty('--read', clamp(1.2 + line.length / 16, 3, 6) + 's');   // ~16 characters a second, 3-6 s
+  const read = clamp(1.2 + line.length / 16, 3, 6); tearsEnd = runT + read;
+  el.style.setProperty('--read', read + 's');   // ~16 characters a second, 3-6 s
   for (const t of [el, CONFIG.REDUCED_MOTION ? null : $('c')]) if (t) { t.classList.remove('go', 'wobble'); void t.offsetWidth; }
   el.classList.add('go'); if (!CONFIG.REDUCED_MOTION) $('c').classList.add('wobble');
 }
@@ -1623,7 +1626,9 @@ function updatePlaying(dt) {
     else if (Math.abs(roach.x) > 5 || roach.z > 8) { roach.active = false; roach.done = true; roach.obj.visible = false; }   // it got away
   }
   // --- Bijli Gayi: lights flicker, then 5-15 s of phone-torch running ---
-  if (dist > 400 && bijliT <= 0 && runT > nextBijli) { bijliDark = rand(...CONFIG.BIJLI_TIME); bijliT = bijliDark + 0.8; $('bijli').classList.remove('hidden'); beep(120, 0.4, 'sawtooth', 0.05, -60); }
+  if (dist > 400 && bijliT <= 0 && runT > nextBijli && runT > tearsEnd + CONFIG.BIJLI_TEAR_GAP) { bijliDark = rand(...CONFIG.BIJLI_TIME); bijliT = bijliDark + 0.8;
+    for (const o of pools.onion.items) if (o.active && !o.hit && !o.passed) { spawnObstacle('barricade', o.lane, o.z); pools.onion.release(o); }   // carts already on the road become barricades
+    $('bijli').classList.remove('hidden'); beep(120, 0.4, 'sawtooth', 0.05, -60); }
   if (bijliT > 0) {
     bijliT -= dt;
     const f = bijliT > bijliDark ? (Math.random() < 0.5 ? 1 : 0.15) : bijliT < 0.4 ? 1 - bijliT / 0.4 : 0;
@@ -1688,7 +1693,7 @@ function updateEntities(dt) {
     if (!ob.passed && ob.z - ob.def.hz > 0.5) {
       ob.passed = true;
       const nearMiss = !ob.hit && (ob.lane === player.lane || (Math.abs(ob.lane - player.lane) === 1 && runT - player.lastSwitch < CONFIG.NEAR_MISS_LANE_TIME));
-      if (nearMiss && ob.def.tearTrigger) tears();
+      if (nearMiss && ob.def.tearTrigger && ob.lane !== player.lane) tears();   // last-second lane dodge only; jumping it cleanly is no tears
       if (nearMiss && CHARS[selIdx].id === 'intern') { bonus += CONFIG.INTERN_BONUS; flash(); SFX.flash(); pop('LIKE & SHARE! +' + CONFIG.INTERN_BONUS, player.x, 2.4, -1, 'teal'); }
     }
   }
