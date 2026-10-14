@@ -1,0 +1,30 @@
+Characters (meshy multi_image_to_3d, rigged + RunFast):
+  guddu           244d88aa-df0c-413a-a422-00e81be64858
+  dadi-ji         625cd330-a2b8-45e1-9a91-56e26de0086b
+  dhol-bro        98bb0a68-2a6b-4999-96e1-5a5953b14672  (+ procedural drum)
+  camera-intern   5b28ab66-c286-47ce-9d3e-89cbd66525c1
+  inspector       59d68cbb-23d5-42e3-91bd-d7756002ac42
+Props (tripo_h3_1_image_to_3d)  <- source image job:
+  barricade       37ee98bc-2981-4a8d-ab7b-b07841d785a9  <- 4a06c03b-deaf-4da4-aa41-45fd00af89c6
+  section-144     7f675610-a88a-4a67-b531-01cb07715ebe  <- 83dcaa9e-e371-4d1c-b586-f875795fb9e9 (+ text overlay)
+  pothole         110c7796-cdfa-4fa4-830d-6e5c1b2a1096  <- 2444cc5f-8178-4e41-8feb-eb19ce2e7598
+  vip-convoy      e2afcb58-399a-4e31-8d8b-07000d392190  <- 925976fd-7788-4176-917b-309a25e7b7ac
+  cutting-chai    4700ad92-ce3e-4dfe-aed3-05fa45aaffba  <- 328465cb-ac22-495b-86c6-28828f401c5f
+  dhol-beat       9f55934c-6b88-4b62-ae9b-6ba029c1286d  <- 327249bf-3787-44d1-87d8-19a43cdff469
+  press-pass      ae63a05a-8bf8-4294-8cac-d2b035a473de  <- c01caea0-c7b2-4cac-806f-bc12199ef8db
+  jugaad-thela    16870d8a-bb9f-4331-9d20-c39dc7f0c1f3  <- 313b4ace-fec4-4706-b55b-6224e0144cd4
+  coin            procedural (three.js), replaces Tripo 71aaaf18-1dd2-472d-8220-23dcd2a2a937
+Inspector v2 (police): image 51f642d5-75da-4155-82e6-1b4f61ae937c, turnaround 9a2cfbf5-937f-45de-9fbf-8184ebec8798,
+  mesh tripo_h3_1_multiview 83b3fb12-234a-41e3-a043-80c6ad7a994a, rig 82061a25-f4d4-4938-be29-040bd8bca1dd (Run_02), rotated to +Z in three.js
+Street (tripo_h3_1_image_to_3d <- image):
+  auto-rickshaw   d8179d5d-c6e7-476e-88ad-7d2c7a7dc67b <- f253f4b5-6b9e-44e1-bde7-8f7d58ff90ef
+  office-goer     b94c01fa-714a-43c9-8bea-d3996e4f3ce4 <- a2d1ebbb-b922-4a2e-bc74-b5b201f64b23
+  shopper         f18605bb-c2c9-456c-96dc-800d9ce69f17 <- c1941757-a37b-4f68-87e2-652653c2a4cb
+  planter         1c796134-d665-4ed1-b518-442eada5dd85 <- a00bcdb5-b441-4b87-8f35-3a07c347c996
+  dog             178f271c-ed7d-4ead-ae71-7e64e57b2648 <- 7fa2d38c-4499-4807-a19f-7ce68f87ccb2
+  bus             ec5c0512-b953-43f3-b349-a33a0e8bf23c <- b4082824-8d67-4cdd-a301-95d12929b0c8
+  chai-stall      0f5b584f-762e-4f05-bce7-005bb32a8193 <- ede36241-74e0-4646-af84-9d0c50907d22
+  lamp-garland    0c60ed40-7521-48e5-b586-b15ba9eab0e3 <- 8f62c0eb-9bad-42c6-9bd4-271bb231a019
+Inspector v3 (fixed run): rigged from +Z-facing mesh, rig 9ef334a3-d0ee-41d1-a078-2bd408b1bef7 (Run_02)
+Cocky (cockroach runner): hero c7aac810-088e-4409-a2aa-721f75d4f16e, turnaround 1d2c1f09-8feb-4ae2-befb-a209834f6e6e,
+  mesh tripo_h3_1_multiview f634cf5a-cd03-4c09-a01b-0457865ab360, rig 8fcdcf42-b93e-418d-9ac1-84c00ca81967 (RunFast)

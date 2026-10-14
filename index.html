@@ -1,0 +1,1991 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#ff8a1f">
+<title>Morcha Rush</title>
+<link rel="icon" type="image/png" sizes="32x32" href="brand/favicon-32.png">
+<link rel="apple-touch-icon" href="brand/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<style>
+:root{--saffron:#ff8a1f;--pink:#ff3d7f;--teal:#13b5a6;--marigold:#ffd23f;--plum:#2a1b3d;--cream:#fff8ec}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:#ffc9a3;color:var(--plum);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:none;overscroll-behavior:none}
+#c{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
+#idlePic{position:fixed;left:0;top:0;pointer-events:none;transform-origin:50% 100%;filter:drop-shadow(0 6px 8px rgba(0,0,0,.35))}
+#ui{position:fixed;inset:0;pointer-events:none}
+.hidden{display:none!important}
+.chunky,.btn,.pill,.title,.pop,#warn,h2{font-family:"Arial Black","Arial Rounded MT Bold",Impact,system-ui,sans-serif;font-weight:900}
+.panel{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
+  padding:max(16px,env(safe-area-inset-top)) 16px max(18px,env(safe-area-inset-bottom))}
+button{pointer-events:auto;font:inherit;cursor:pointer;border:0;color:inherit;background:none}
+.btn{background:var(--pink);color:#fff;border:3px solid var(--plum);border-radius:16px;padding:.5em 1.3em;
+  font-size:clamp(18px,4.6vw,26px);box-shadow:0 5px 0 var(--plum);transition:transform .08s,box-shadow .08s;letter-spacing:.5px}
+.btn:active{transform:translateY(4px);box-shadow:0 1px 0 var(--plum)}
+.btn.alt{background:var(--teal)}
+.btn.gold{background:var(--saffron)}
+.btn:disabled{filter:grayscale(.6);opacity:.75;cursor:default}
+.card{pointer-events:auto;background:rgba(255,248,236,.95);border:3px solid var(--plum);border-radius:22px;
+  box-shadow:0 6px 0 var(--plum);padding:14px 16px;width:min(440px,100%);text-align:center}
+
+/* ---------- Menu ---------- */
+#menu{justify-content:space-between}
+.title{font-size:clamp(48px,13vw,104px);line-height:.86;text-align:center;color:var(--saffron);
+  -webkit-text-stroke:3px var(--plum);paint-order:stroke fill;text-shadow:0 6px 0 var(--plum);
+  animation:wob 2.4s ease-in-out infinite;margin-top:4px}
+.title span{color:var(--pink)}
+@keyframes wob{0%,100%{transform:rotate(-3deg) scale(1)}50%{transform:rotate(2deg) scale(1.04)}}
+.tagline{margin:10px auto 0;display:table;background:var(--cream);border:3px solid var(--plum);border-radius:99px;
+  padding:3px 14px;font-weight:800;font-size:clamp(13px,3.6vw,17px)}
+.charsel{display:flex;align-items:center;gap:8px}
+.charsel .arrow{width:44px;height:44px;border-radius:50%;background:var(--marigold);border:3px solid var(--plum);
+  font-size:18px;box-shadow:0 3px 0 var(--plum);flex:none}
+.cinfo{flex:1;min-width:0}
+.cinfo b{display:block;font-family:"Arial Black",Impact,sans-serif;font-size:clamp(20px,5.4vw,28px)}
+.cinfo small{display:block;font-size:13px;line-height:1.3;color:#5b4a6b;margin-top:2px}
+.dots{margin:6px 0 10px;font-size:12px;letter-spacing:4px;color:#b9a8c4}
+.dots i{font-style:normal}.dots i.on{color:var(--pink)}
+.stats{margin-top:10px;font-size:14px;font-weight:700}
+.stats b{color:var(--pink)}
+.hint{margin-top:6px;font-size:12px;color:#6b5a7a}
+/* landscape: menu in a left column, character dances on the right */
+@media (min-aspect-ratio: 6/5){
+  #menu{justify-content:center;align-items:flex-start;gap:12px;padding-left:max(24px,env(safe-area-inset-left))}
+  #menu>div:first-child{width:min(46vw,460px)}
+  #menu .title{font-size:clamp(36px,min(9vw,11vh),96px)}
+  #menu .card{width:min(46vw,420px)}
+}
+@media (min-aspect-ratio: 6/5) and (max-height:480px){ #menu .hint,#menu .dots{display:none} #menu .card{padding:10px 12px} }
+#mute{position:absolute;right:max(14px,env(safe-area-inset-right));top:max(14px,env(safe-area-inset-top));
+  width:44px;height:44px;border-radius:50%;background:var(--cream);border:3px solid var(--plum);font-size:20px;box-shadow:0 3px 0 var(--plum)}
+
+/* ---------- HUD ---------- */
+#hud{position:absolute;inset:0;padding:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) 10px max(10px,env(safe-area-inset-left))}
+.hud-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.pill{background:var(--cream);border:3px solid var(--plum);border-radius:14px;padding:3px 12px;
+  font-size:clamp(16px,4.6vw,24px);box-shadow:0 3px 0 var(--plum);white-space:nowrap}
+.pill.small{font-size:clamp(12px,3.4vw,15px);padding:2px 9px;border-radius:11px}
+.hud-row2{display:flex;justify-content:space-between;align-items:center;margin-top:8px;gap:8px}
+#powers{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.pw{position:relative;width:46px;height:46px;display:grid;place-items:center;background:var(--cream);border:3px solid var(--plum);border-radius:50%}
+.pw svg{position:absolute;inset:-3px;width:46px;height:46px;transform:rotate(-90deg)}
+.pw .arc{fill:none;stroke:var(--pink);stroke-width:4;stroke-linecap:round;stroke-dasharray:125.7}
+.pw span{font-size:22px;line-height:1}
+#insp{display:flex;align-items:center;gap:6px;background:var(--cream);border:3px solid var(--plum);border-radius:12px;padding:2px 8px 2px 4px}
+#insp .bar{width:clamp(60px,18vw,110px);height:10px;border-radius:6px;background:#eadbc9;overflow:hidden}
+#inspFill{height:100%;width:0;background:linear-gradient(90deg,var(--marigold),var(--pink));transition:width .15s}
+#insp.hot{animation:shake .25s infinite}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-2px)}75%{transform:translateX(2px)}}
+#btnPause{position:absolute;left:50%;bottom:max(12px,env(safe-area-inset-bottom));transform:translateX(-50%);
+  width:42px;height:42px;border-radius:50%;background:var(--cream);border:3px solid var(--plum);font-size:16px;box-shadow:0 3px 0 var(--plum)}
+
+/* ---------- Overlays ---------- */
+#pause,#over{justify-content:center;background:rgba(42,27,61,.35)}
+h2{font-size:clamp(40px,11vw,64px);color:var(--pink);-webkit-text-stroke:2px var(--plum);paint-order:stroke fill;text-shadow:0 4px 0 var(--plum);line-height:1}
+.quip{margin:8px 0 12px;font-weight:700;font-size:15px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.grid div{background:#fff;border:2px solid var(--plum);border-radius:12px;padding:6px}
+.grid small{display:block;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#6b5a7a}
+.grid b{font-family:"Arial Black",Impact,sans-serif;font-size:22px}
+.row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.sticker{display:inline-block;background:var(--marigold);border:3px solid var(--plum);border-radius:10px;padding:2px 10px;
+  font-family:"Arial Black",Impact,sans-serif;transform:rotate(-6deg);margin-top:6px;animation:wob 1s infinite}
+.sub{margin-top:10px;font-size:12px;color:#6b5a7a}
+
+#pops{position:absolute;inset:0;overflow:hidden}
+.pop{position:absolute;left:0;top:0;opacity:0;white-space:nowrap;font-size:clamp(22px,6vw,40px);color:var(--marigold);
+  -webkit-text-stroke:2px var(--plum);paint-order:stroke fill;text-shadow:0 3px 0 var(--plum)}
+.pop.go{animation:pop .95s cubic-bezier(.2,1.5,.4,1) forwards}
+@keyframes pop{0%{opacity:0;transform:translate(-50%,-50%) rotate(var(--r)) scale(.3)}
+  15%{opacity:1;transform:translate(-50%,-50%) rotate(var(--r)) scale(1.15)}
+  30%{opacity:1;transform:translate(-50%,-50%) rotate(var(--r)) scale(1)}
+  100%{opacity:0;transform:translate(-50%,-150%) rotate(var(--r)) scale(1)}}
+.pop.coin{font-size:clamp(15px,4vw,22px);color:#fff}
+.pop.pink{color:var(--pink)}.pop.teal{color:var(--teal)}.pop.white{color:#fff}.pop.orange{color:var(--saffron)}
+#flash{position:absolute;inset:0;background:#fff;opacity:0}
+#flash.go{animation:fl .4s ease-out}
+@keyframes fl{0%{opacity:.85}100%{opacity:0}}
+#warn{position:absolute;left:50%;top:22%;transform:translateX(-50%);background:var(--saffron);color:var(--plum);
+  border:3px solid var(--plum);border-radius:14px;padding:6px 14px;font-size:clamp(16px,4.6vw,24px);
+  box-shadow:0 4px 0 var(--plum);animation:blink .3s steps(2) infinite;text-align:center;white-space:nowrap}
+#warn small{display:block;font-size:12px;font-family:system-ui,sans-serif;font-weight:800}
+@keyframes blink{50%{background:var(--marigold)}}
+.mini{margin:0 0 10px}
+.chip{background:var(--cream);border:2px solid var(--plum);border-radius:99px;padding:4px 12px;font-weight:800;font-size:14px;box-shadow:0 2px 0 var(--plum)}
+.list{text-align:left;max-height:52vh;overflow:auto;margin:6px 0 12px}
+.list .it{display:flex;gap:10px;align-items:center;background:#fff;border:2px solid var(--plum);border-radius:12px;padding:8px 10px;margin:6px 0}
+.list .it.off{opacity:.55}
+.list .it b{display:block;font-family:"Arial Black",Impact,sans-serif;font-size:15px}
+.list .it small{display:block;font-size:12px;color:#5b4a6b}
+.list .it .em{font-size:26px;flex:none}
+.list .it .act{margin-left:auto;flex:none}
+.list .it .act .btn{font-size:13px;padding:4px 10px;border-radius:10px;box-shadow:0 3px 0 var(--plum)}
+#toast{position:absolute;left:50%;top:14%;transform:translateX(-50%);background:var(--plum);color:#fff;border-radius:14px;padding:8px 16px;
+  font-weight:800;font-size:15px;box-shadow:0 4px 0 #000;white-space:nowrap;z-index:5}
+#toast.go{animation:toast 2.8s ease forwards}
+@keyframes toast{0%{opacity:0;transform:translate(-50%,-20px)}10%,85%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,-10px)}}
+#tears{position:absolute;inset:0;display:grid;place-items:center;opacity:0;background:radial-gradient(circle,rgba(150,200,255,.05),rgba(110,160,255,.35));
+  -webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+#tears span{font-family:"Arial Black",Impact,sans-serif;font-size:clamp(18px,5vw,30px);color:#fff;-webkit-text-stroke:2px var(--plum);paint-order:stroke fill}
+#tears.go{animation:tears 1.5s ease-out}
+@keyframes tears{0%{opacity:0}15%,60%{opacity:1}100%{opacity:0}}
+#bijli{position:absolute;left:50%;top:22%;transform:translateX(-50%);background:#1d1630;color:var(--marigold);border:3px solid var(--marigold);border-radius:14px;
+  padding:6px 16px;font-family:"Arial Black",Impact,sans-serif;font-size:clamp(18px,5vw,26px);animation:blink .4s steps(2) infinite;white-space:nowrap}
+#nogl{position:absolute;inset:0;display:grid;place-items:center;padding:24px;background:#ffc9a3;pointer-events:auto}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<img id="idlePic" alt="" hidden>
+
+<div id="ui">
+  <div id="pops"></div>
+  <div id="flash"></div>
+  <div id="tears"><span>…thinking about your ex?</span></div>
+  <div id="bijli" class="hidden">⚡ BIJLI GAYI! ⚡</div>
+  <div id="toast" class="hidden"></div>
+  <div id="warn" class="hidden">🚨 VIP MOVEMENT 🚨<small id="warnLane"></small></div>
+
+  <!-- Start screen -->
+  <div id="menu" class="panel">
+    <div>
+      <h1 class="title">Morcha<br><span>Rush</span></h1>
+      <p class="tagline">Run the march. Outrun the corruption.</p>
+    </div>
+    <div class="card">
+      <div class="charsel">
+        <button class="arrow" id="prev" aria-label="Previous character">◀</button>
+        <div class="cinfo"><b id="cName">Guddu</b><small id="cAbility"></small></div>
+        <button class="arrow" id="next" aria-label="Next character">▶</button>
+      </div>
+      <div class="dots" id="dots"></div>
+      <div class="row mini"><button class="chip" id="btnAch">🏆 <span id="achCount">0/5</span></button><button class="chip" id="btnGrwm">👕 GRWM</button></div>
+      <button class="btn" id="btnPlay">PLAY ▶</button>
+      <div class="stats">Best <b id="mBest">0</b> · Wallet <b id="mCoins">₹ 0</b></div>
+      <p class="hint" id="hint"></p>
+    </div>
+    <button id="mute" aria-label="Toggle sound">🔊</button>
+  </div>
+
+  <!-- In-game HUD -->
+  <div id="hud" class="hidden">
+    <div class="hud-top">
+      <div class="pill" id="hDist">0 m</div>
+      <div id="powers">
+        <div class="pw hidden" data-k="chai"><svg viewBox="0 0 46 46"><circle class="arc" cx="23" cy="23" r="20"/></svg><span>☕</span></div>
+        <div class="pw hidden" data-k="dhol"><svg viewBox="0 0 46 46"><circle class="arc" cx="23" cy="23" r="20"/></svg><span>🥁</span></div>
+        <div class="pw hidden" data-k="press"><svg viewBox="0 0 46 46"><circle class="arc" cx="23" cy="23" r="20"/></svg><span>📸</span></div>
+        <div class="pw hidden" data-k="thali"><svg viewBox="0 0 46 46"><circle class="arc" cx="23" cy="23" r="20"/></svg><span>🍽️</span></div>
+        <div class="pw hidden" data-k="slow"><svg viewBox="0 0 46 46"><circle class="arc" cx="23" cy="23" r="20"/></svg><span>🍔</span></div>
+        <div class="pw hidden" data-k="thela"><span>🛺</span></div>
+      </div>
+      <div class="pill" id="hCoins">₹ 0</div>
+    </div>
+    <div class="hud-row2">
+      <div id="insp" title="Inspector distance"><span>👮</span><div class="bar"><div id="inspFill"></div></div></div>
+      <div class="pill small" id="ability"></div>
+      <div class="pill small" id="hScore">★ 0</div>
+    </div>
+    <button id="btnPause" aria-label="Pause">⏸</button>
+  </div>
+
+  <div id="pause" class="panel hidden">
+    <div class="card">
+      <h2>PAUSED</h2>
+      <p class="quip">Havaldar-ji is collecting his "chai-paani".</p>
+      <p class="sub" id="pauseTip"></p>
+      <div class="row"><button class="btn alt" id="btnResume">RESUME</button><button class="btn" id="btnQuit">MENU</button></div>
+    </div>
+  </div>
+
+  <div id="over" class="panel hidden">
+    <div class="card">
+      <h2 id="oTitle">DETAINED!</h2>
+      <div id="newBest" class="sticker hidden">NEW BEST!</div>
+      <p class="quip" id="quip"></p>
+      <div class="grid">
+        <div><small>Score</small><b id="oScore">0</b></div>
+        <div><small>Distance</small><b id="oDist">0 m</b></div>
+        <div><small>Coins</small><b id="oCoins">₹ 0</b></div>
+        <div><small>Best</small><b id="oBest">0</b></div>
+      </div>
+      <button class="btn" id="btnRevive" style="width:100%;margin-bottom:10px">📱 MAKE NEW HANDLE</button>
+      <div class="row"><button class="btn alt" id="btnRestart">RESTART</button><button class="btn gold" id="btnMenu">MENU</button></div>
+      <p class="sub" id="oWallet"></p>
+    </div>
+  </div>
+
+  <div id="achPanel" class="panel hidden" style="justify-content:center;background:rgba(42,27,61,.35)">
+    <div class="card"><h2 style="font-size:34px">ACHIEVEMENTS</h2><div class="list" id="achList"></div><button class="btn alt" data-close>CLOSE</button></div>
+  </div>
+  <div id="grwmPanel" class="panel hidden" style="justify-content:center;background:rgba(42,27,61,.35)">
+    <div class="card"><h2 style="font-size:40px">GRWM</h2><p class="sub">Get ready with Guddu. Waterproof kajal: lasts longer than most things in Delhi.</p><div class="list" id="grwmList"></div><button class="btn alt" data-close>DONE</button></div>
+  </div>
+
+  <div id="loading" class="panel" style="justify-content:center;background:#ffc9a3;pointer-events:auto"><div class="card"><h2 style="font-size:36px">CHALO!</h2><p class="quip" id="loadMsg">Loading the march against corruption…</p><p class="sub" id="loadTip"></p></div></div>
+  <div id="nogl" class="hidden"><div class="card"><h2 style="font-size:32px">OYE!</h2><p class="quip">Your browser couldn't start WebGL, so the 3D march can't load here. Try a recent Chrome, Safari or Firefox.</p></div></div>
+</div>
+
+<script src="models.js"></script>  <!-- Higgsfield GLB models, packed by tools/pack-models.py -->
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+/* =====================================================================
+   CONFIG: every gameplay number lives here. Tweak freely.
+   ===================================================================== */
+const CONFIG = {
+  LANE_WIDTH: 2.2,          // world units between lane centres (3 lanes: -1, 0, 1)
+  LANE_SWITCH_TIME: 0.12,   // seconds to glide one lane over
+  START_SPEED: 14,          // world units (= metres) per second at the start
+  MAX_SPEED: 34,            // speed cap
+  SPEED_RAMP: 0.25,         // speed added per second of play
+  JUMP_VELOCITY: 11,        // initial upward velocity of a jump
+  GRAVITY: 32,              // downward acceleration
+  FAST_FALL_VELOCITY: 22,   // pressing down mid-air slams you to the ground this fast
+  SLIDE_TIME: 0.7,          // seconds a slide lasts
+  SPAWN_AHEAD: 120,         // obstacles appear this far in front of the player
+  MAX_GAP_TIME: 1.6,        // seconds between obstacle rows at START_SPEED (more = easier)
+  MIN_GAP_TIME: 0.85,       // seconds between rows at MAX_SPEED (keep above ~0.75 so double jumps stay fair)
+  COIN_CHANCE: 0.6,         // chance a gap gets a coin trail
+  COIN_ARC_CHANCE: 0.35,    // chance a jumpable obstacle gets a coin arc over it
+  POWERUP_CHANCE: 0.08,     // chance per row to spawn a power-up instead of coins
+  CONVOY_CHANCE: 0.07,      // chance per row of a VIP convoy...
+  CONVOY_MIN_DIST: 300,     // ...but only after this many metres
+  CONVOY_EXTRA_SPEED: 7,    // convoy drives toward you this much faster than the road scrolls
+  CONVOY_WARN_TIME: 2.0,    // seconds of "ROUTE DIVERTED" warning before it reaches you
+  MULTI_MIN_DIST: 150,      // rows with 2 obstacles start after this distance
+  TRIPLE_MIN_DIST: 600,     // rows with 3 (all jump/slide-able) start after this distance
+  STUMBLE_RECOVER: 6,       // seconds after a stumble before the Inspector drops back
+  INVULN_AFTER_HIT: 1.0,    // grace seconds after any hit
+  INSPECTOR_FAR_Z: 10,      // where the Inspector lurks normally (behind the camera)
+  INSPECTOR_NEAR_Z: 2.6,    // where he breathes down your neck after a stumble
+  NEAR_MISS_LANE_TIME: 0.45,// a lane switch this recent counts as a near-miss when an obstacle passes beside you
+  COIN_VALUE: 1, COIN_SCORE: 10,
+  POWERUP_TIME: { chai: 5, dhol: 6, press: 4, thali: 3, slow: 2 }, // seconds; Jugaad Thela lasts until it absorbs one crash; slow = bad-optics burger
+  BURGER_SLOW: 0.6,         // speed multiplier while the burger trap is active
+  BURGER_CHANCE: 0.04,      // chance per row of a 'Bad optics' burger trap
+  BOOK_CHANCE: 0.015,       // chance per row of the rare 'Required Reading' book
+  BOOK_COINS: 50,
+  STATION_CHANCE: 0.06,     // chance per row of a 'Station Closed' shutter (lane blocker, after STATION_MIN_DIST)
+  STATION_MIN_DIST: 200,
+  ONION_WEIGHT: 0.12,       // share of normal obstacles that are onion carts
+  BIJLI_EVERY: [35, 70],    // seconds between 'Bijli Gayi' power cuts (after 400 m)
+  BIJLI_TIME: 5,            // seconds of darkness
+  ROACH_WINDOW: [150, 700], // the little brown visitor appears once per run somewhere in this distance range (m)
+  ROACH_BONUS: 100,
+  CHAI_SPEED_MULT: 1.5,
+  DADI_COOLDOWN: 8,         // Dadi-ji's chappal swat recharge (seconds)
+  DHOL_SHOCK_RANGE: 7,      // Dhol Bro's landing shockwave reach (units ahead)
+  INTERN_BONUS: 25,         // Camera Intern near-miss bonus
+  UNLOCK_COST: { guddu: 0, dadi: 500, dhol: 1000, intern: 2000, cocky: 3000 },
+  STREET_DENSITY: matchMedia('(pointer:coarse)').matches ? 0.65 : 1,   // sidewalk props/walkers; lower = faster on phones
+};
+
+/* ===================================================================== */
+window.__mrBooted = true;
+const $ = id => document.getElementById(id);
+const COL = { saffron:'#ff8a1f', pink:'#ff3d7f', teal:'#13b5a6', marigold:'#ffd23f', plum:'#2a1b3d', cream:'#fff8ec' };
+const DARK = '#1a1024';
+const laneX = l => l * CONFIG.LANE_WIDTH;
+const rand = (a, b) => a + Math.random() * (b - a);
+const pick = arr => arr[(Math.random() * arr.length) | 0];
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const damp = (a, b, k, dt) => a + (b - a) * (1 - Math.exp(-k * dt));
+
+const CHARS = [
+  { id:'guddu',  name:'Guddu',         ability:'Student. Big backpack, bigger question: where did the road budget go? No special move.' },
+  { id:'dadi',   name:'Dadi-ji',       ability:'Heard "kal aana" for 60 years. Chappal Swat: auto-swats a barricade every 8s. THWACK!' },
+  { id:'dhol',   name:'Dhol Bro',      ability:'Too loud to bribe. Beat Drop: every landing sends a shockwave that clears obstacles ahead.' },
+  { id:'intern', name:'Camera Intern', ability:'Exposes scams for a living. Viral Flash: every near-miss flashes the camera for +25.' },
+  { id:'cocky',  name:'Cocky',         ability:'Gen Z cockroach. Survived every scheme, every scam, every "kal aana". Unkillable: shrugs off one crash per run.' },
+];
+const QUIPS = [   // game-over lines: satire of everyday corruption, never of real people or parties
+  'Chai-paani ke bina file nahi hilegi.', 'Road budget: ₹10 crore. Road: 🕳️',
+  'Your file went "missing". Again.', 'Setting ho jayegi... for a small fee.',
+  'Bridge inaugurated. Bridge also collapsed.', 'Upar tak jaata hai, beta. Upar tak.',
+  'Thane ka computer down hai. Kal aana.', 'Tender approved for a very qualified cousin.',
+];
+// Meme Bible copy bank (2026 morcha in-jokes). Reference the moment, never the person.
+const INSPECTOR_LINES = ['FORM 26-A?! Certificate of Patriotism, attested!', 'Ruko! Permission kahan hai?', 'OYE! CHAI-PAANI?'];
+const TIPS = [
+  'Pro players train 11 hours a day. Bathroom breaks included.', 'Waterproof kajal: lasts longer than most things in Delhi.',
+  'Single? The morcha is the new dating app.', 'Lazy refers only to physical activity. Your thumbs are exempt.',
+  'Shiny burgers are bad optics. Just saying.', 'Steel thali + spoon = 3 seconds of peace from Havaldar-ji.',
+];
+const ACH = [   // id, emoji, name, description, progress(stat) → [have, need]
+  { id: 'cardio', e: '💦', name: 'Thanks for the Cardio', desc: 'Escape the Inspector 100 times.', prog: () => [save.stats.escapes, 100] },
+  { id: 'member', e: '🪳', name: 'Honorary Member', desc: 'Catch the little brown visitor.', prog: () => [save.ach.member ? 1 : 0, 1] },
+  { id: 'ding', e: '🔔', name: 'Ding-Dong-Ditch', desc: 'Start 50 runs.', prog: () => [save.stats.runs, 50] },
+  { id: 'handle', e: '📱', name: 'New Handle Who Dis', desc: 'Revive 10 times.', prog: () => [save.stats.revives, 10] },
+  { id: 'online', e: '🛋️', name: 'Chronically Online', desc: 'Play 11 hours in total.', prog: () => [Math.floor(save.stats.playSec / 3600), 11] },
+];
+const OUTFITS = [   // Guddu's GRWM wardrobe
+  { id: 'classic', e: '💙', name: 'Classic Hoodie', desc: 'The one he slept in.', cost: 0 },
+  { id: 'mitti', e: '🟤', name: 'Mitti Brown Hoodie', desc: 'Earth brown. Just a colour. Totally.', cost: 300 },
+  { id: 'cape', e: '🦸', name: 'Gamchha Cape', desc: 'A red-checked towel, tied with conviction.', cost: 400 },
+];
+
+/* ---------- Save data (localStorage may be blocked: never trust it) ---------- */
+const SAVE_KEY = 'morchaRush.v1';
+const save = { best:0, bestDist:0, totalCoins:0, unlocked:['guddu'], selected:'guddu', muted:false,
+  stats: { escapes:0, runs:0, revives:0, playSec:0 }, ach: {}, outfits: ['classic'], outfit: 'classic' };
+try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); if (s && typeof s === 'object') Object.assign(save, s); } catch (e) {}
+if (!Array.isArray(save.unlocked)) save.unlocked = ['guddu'];
+save.stats = Object.assign({ escapes:0, runs:0, revives:0, playSec:0 }, save.stats); save.ach ||= {};
+if (!Array.isArray(save.outfits)) save.outfits = ['classic']; save.outfit ||= 'classic';
+try { document.getElementById('loadTip').textContent = '💡 ' + TIPS[(Math.random() * TIPS.length) | 0]; } catch (e) {}
+if (!CHARS.some(c => c.id === save.selected)) save.selected = 'guddu';
+function persist() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} }
+
+/* =====================================================================
+   Higgsfield GLB models (characters are rigged with a run cycle).
+   models.js holds them as base64 so the game also works from file://.
+   Anything that fails to load falls back to the code-built version.
+   ===================================================================== */
+const GLB = {};
+{
+  const src = window.MORCHA_MODELS || {}, loader = new GLTFLoader();
+  await Promise.all(Object.entries(src).map(async ([name, b64]) => {
+    try {
+      const buf = await (await fetch('data:model/gltf-binary;base64,' + b64)).arrayBuffer();
+      GLB[name] = await loader.parseAsync(buf, '');
+      GLB[name].scene.traverse(o => { if (o.isMesh) { for (const m of [].concat(o.material)) m.metalness = 0; } });   // no env map: metal reads as black
+    } catch (e) { console.warn('Model failed to load, using fallback:', name, e); }
+  }));
+  if (!Object.keys(src).length) console.warn('models.js missing: using code-built models');
+}
+
+/* =====================================================================
+   Renderer, scene, camera, lights
+   ===================================================================== */
+const canvas = $('c');
+const isTouch = matchMedia('(pointer:coarse)').matches;
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: !isTouch, powerPreference: 'high-performance' });
+} catch (e) { $('nogl').classList.remove('hidden'); throw e; }
+renderer.setPixelRatio(Math.min(devicePixelRatio, isTouch ? 1.5 : 2));
+renderer.shadowMap.enabled = !isTouch;          // shadows off on phones for frame rate
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const scene = new THREE.Scene();
+const FOG = new THREE.Color('#ffc9a3');
+scene.fog = new THREE.Fog(FOG, 45, 150);
+const camera = new THREE.PerspectiveCamera(60, 1, 0.1, 400);
+let baseFov = 60, camBack = 7.5, camUp = 4.5;
+
+const hemi = new THREE.HemisphereLight('#ffe6d0', '#b07a86', 1.7); scene.add(hemi);
+const sun = new THREE.DirectionalLight('#ffd6a8', 2.5);   // low golden-hour sun
+sun.castShadow = !isTouch;
+sun.shadow.mapSize.set(1024, 1024);
+Object.assign(sun.shadow.camera, { left:-6, right:6, top:8, bottom:-6, near:1, far:40 });
+sun.shadow.bias = -0.0006;
+scene.add(sun, sun.target);
+// Phone torch for 'Bijli Gayi' (always in the scene at 0 intensity so toggling it never recompiles shaders)
+const torch = new THREE.SpotLight('#fff3d6', 0, 45, 0.5, 0.6, 1); scene.add(torch, torch.target);
+const LIGHT_BASE = { hemi: 1.7, sun: 2.5 };
+
+/* =====================================================================
+   Shared geometry / material helpers (create once, reuse everywhere)
+   ===================================================================== */
+const G = {
+  box: new THREE.BoxGeometry(1, 1, 1),
+  sph: new THREE.SphereGeometry(1, 16, 12),
+  sphLo: new THREE.SphereGeometry(1, 8, 6),
+  cyl: new THREE.CylinderGeometry(1, 1, 1, 16),
+  cylLo: new THREE.CylinderGeometry(1, 1, 1, 8),
+  cone: new THREE.ConeGeometry(1, 1, 10),
+  tri: new THREE.ConeGeometry(1, 1, 3),
+  torus: new THREE.TorusGeometry(1, 0.25, 8, 20),
+  plane: new THREE.PlaneGeometry(1, 1),
+  skirt: new THREE.CylinderGeometry(0.3, 0.6, 0.9, 18),
+  oct: new THREE.OctahedronGeometry(0.12),
+};
+const capCache = new Map();
+const capLoCache = new Map();
+function capLo(r, l) { const k = r + '_' + l; if (!capLoCache.has(k)) capLoCache.set(k, new THREE.CapsuleGeometry(r, l, 2, 6)); return capLoCache.get(k); }
+function capG(r, l) { const k = r + '_' + l; if (!capCache.has(k)) capCache.set(k, new THREE.CapsuleGeometry(r, l, 4, 10)); return capCache.get(k); }
+const matCache = new Map();
+function mat(color) { if (!matCache.has(color)) matCache.set(color, new THREE.MeshLambertMaterial({ color })); return matCache.get(color); }
+const basicCache = new Map();
+function basicMat(color) { if (!basicCache.has(color)) basicCache.set(color, new THREE.MeshBasicMaterial({ color })); return basicCache.get(color); }
+const VC = new THREE.MeshLambertMaterial({ vertexColors: true });   // material for merged multi-colour props
+
+function M(geo, color, x = 0, y = 0, z = 0, sx = 1, sy = sx, sz = sx) {
+  const m = new THREE.Mesh(geo, typeof color === 'string' ? mat(color) : color);
+  m.position.set(x, y, z); m.scale.set(sx, sy, sz); return m;
+}
+
+// Merge many coloured primitives into ONE geometry (one draw call per prop).
+const _m4 = new THREE.Matrix4(), _q = new THREE.Quaternion(), _e = new THREE.Euler(), _v = new THREE.Vector3(), _s = new THREE.Vector3();
+function part(geo, color, x, y, z, sx = 1, sy = sx, sz = sx, rx = 0, ry = 0, rz = 0) { return { geo, color, x, y, z, sx, sy, sz, rx, ry, rz }; }
+function merge(parts) {
+  let total = 0; const list = [];
+  for (const p of parts) {
+    const g = p.geo.index ? p.geo.toNonIndexed() : p.geo.clone();
+    _q.setFromEuler(_e.set(p.rx, p.ry, p.rz));
+    g.applyMatrix4(_m4.compose(_v.set(p.x, p.y, p.z), _q, _s.set(p.sx, p.sy, p.sz)));
+    list.push([g, new THREE.Color(p.color)]); total += g.attributes.position.count;
+  }
+  const pos = new Float32Array(total * 3), nor = new Float32Array(total * 3), col = new Float32Array(total * 3);
+  let o = 0;
+  for (const [g, c] of list) {
+    const n = g.attributes.position.count;
+    pos.set(g.attributes.position.array, o * 3); nor.set(g.attributes.normal.array, o * 3);
+    for (let i = 0; i < n; i++) { col[(o + i) * 3] = c.r; col[(o + i) * 3 + 1] = c.g; col[(o + i) * 3 + 2] = c.b; }
+    o += n; g.dispose();
+  }
+  const out = new THREE.BufferGeometry();
+  out.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  out.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+  out.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  out.computeBoundingSphere();
+  return out;
+}
+
+/* ---------- Canvas-drawn textures (signs, coin face, sky, skyline, road) ---------- */
+function canvasTex(w, h, draw) {
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const g = c.getContext('2d'); draw(g, w, h);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;
+}
+function rr(g, x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
+const FONT = '"Arial Black","Arial Rounded MT Bold",Impact,system-ui,sans-serif';
+function fitText(g, lines, size, maxW) {
+  let fs = size;
+  do { g.font = `900 ${fs}px ${FONT}`; fs -= 2; } while (fs > 10 && Math.max(...lines.map(l => g.measureText(l).width)) > maxW);
+  return fs + 2;
+}
+function signTex(lines, { bg = COL.cream, fg = COL.plum, border = COL.pink, w = 512, h = 256, font = 72 } = {}) {
+  return canvasTex(w, h, g => {
+    g.fillStyle = border; rr(g, 0, 0, w, h, 30); g.fill();
+    g.fillStyle = bg; rr(g, 16, 16, w - 32, h - 32, 20); g.fill();
+    const fs = fitText(g, lines, font, w - 70);
+    g.fillStyle = fg; g.textAlign = 'center'; g.textBaseline = 'middle';
+    lines.forEach((l, i) => g.fillText(l, w / 2, h / 2 + (i - (lines.length - 1) / 2) * fs * 1.1 + fs * 0.05));
+  });
+}
+const TEX = {
+  hmmm: signTex(['HMMM 🤔'], { border: COL.plum, font: 120, h: 290 }),
+  barricade: signTex(['ADJUSTING,', 'PLEASE WAIT'], { border: COL.saffron, font: 70 }),
+  s144: signTex(['SECTION 144'], { border: COL.pink, font: 96, w: 640, h: 290 }),
+  route: signTex(['« ROUTE DIVERTED »'], { bg: COL.saffron, border: COL.plum, font: 70, w: 768, h: 200 }),
+  press: signTex(['PRESS'], { border: COL.pink, font: 90, w: 256, h: 160 }),
+  station: signTex(['STATION CLOSED', 'INCONVENIENCE REGRETTED'], { bg: '#1d1630', fg: COL.cream, border: COL.saffron, font: 64, w: 768, h: 230 }),
+  check: canvasTex(128, 128, (g, w) => { g.fillStyle = '#d8323a'; g.fillRect(0, 0, w, w); g.fillStyle = 'rgba(255,248,236,.85)'; for (let i = 0; i < 8; i += 2) { g.fillRect(i * 16, 0, 16, w); g.fillRect(0, i * 16, w, 16); } g.fillStyle = 'rgba(42,27,61,.35)'; for (let i = 1; i < 8; i += 2) g.fillRect(i * 16, i * 16, 16, 16); }),
+  wip: canvasTex(320, 220, (g, w, h) => {             // pink pennant flag
+    g.fillStyle = COL.pink; g.beginPath(); g.moveTo(0, 0); g.lineTo(w, h * 0.5); g.lineTo(0, h); g.closePath(); g.fill();
+    g.fillStyle = '#fff'; g.textBaseline = 'middle'; g.font = `900 34px ${FONT}`;
+    g.fillText('Work in', 14, h * 0.38); g.fillText('Progress ✨', 14, h * 0.62);
+  }),
+  form: canvasTex(200, 256, (g, w, h) => {            // Inspector's paperwork
+    g.fillStyle = '#fff'; g.fillRect(0, 0, w, h);
+    g.fillStyle = COL.plum; g.font = `900 26px ${FONT}`; g.fillText('FORM 27-B', 14, 36);
+    g.fillStyle = '#b9aec4'; for (let i = 0; i < 8; i++) g.fillRect(14, 60 + i * 22, w - 28 - (i % 3) * 30, 6);
+    g.strokeStyle = COL.pink; g.lineWidth = 5; g.beginPath(); g.arc(w - 46, h - 40, 24, 0, 7); g.stroke();
+  }),
+  coin: canvasTex(256, 256, (g, w) => {
+    const gr = g.createRadialGradient(w * 0.4, w * 0.35, 10, w / 2, w / 2, w / 2);
+    gr.addColorStop(0, '#fff2a8'); gr.addColorStop(0.6, '#ffc93d'); gr.addColorStop(1, '#e09a14');
+    g.fillStyle = gr; g.fillRect(0, 0, w, w);
+    g.strokeStyle = '#c47a0c'; g.lineWidth = 16; g.beginPath(); g.arc(w / 2, w / 2, w / 2 - 22, 0, 7); g.stroke();
+    g.font = `900 150px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillStyle = '#9a5a08'; g.fillText('₹', w / 2 + 5, w / 2 + 9); g.fillStyle = '#ffe680'; g.fillText('₹', w / 2, w / 2 + 3);
+  }),
+};
+const emojiCache = {};
+function emojiTex(e) {
+  return emojiCache[e] ||= canvasTex(128, 128, g => { g.font = '96px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(e, 64, 72); });
+}
+function signMesh(tex, w, h, double = false) {
+  const m = new THREE.MeshBasicMaterial({ map: tex, transparent: tex === TEX.wip, alphaTest: tex === TEX.wip ? 0.5 : 0, side: double ? THREE.DoubleSide : THREE.FrontSide });
+  const g = new THREE.Group();
+  const a = new THREE.Mesh(G.plane, m); a.scale.set(w, h, 1); if (double) a.position.z = 0.025; g.add(a);
+  if (double) { const b = new THREE.Mesh(G.plane, new THREE.MeshBasicMaterial({ map: tex })); b.scale.set(w, h, 1); b.rotation.y = Math.PI; b.position.z = -0.025; g.add(b); a.material.side = THREE.FrontSide; }
+  return g;
+}
+
+/* =====================================================================
+   Sky + parallax skyline (India Gate, domes, minarets) + kites
+   ===================================================================== */
+scene.background = canvasTex(4, 512, (g, w, h) => {
+  const gr = g.createLinearGradient(0, 0, 0, h);
+  gr.addColorStop(0, '#7fbdf0'); gr.addColorStop(0.45, '#ffd9b0'); gr.addColorStop(0.62, '#ffc9a3'); gr.addColorStop(1, '#ffc9a3');
+  g.fillStyle = gr; g.fillRect(0, 0, w, h);
+});
+const skylineTex = canvasTex(2048, 512, (g, w, h) => {
+  const base = h * 0.8;
+  g.fillStyle = 'rgba(255,244,214,.95)'; g.beginPath(); g.arc(w * 0.7, h * 0.42, 54, 0, 7); g.fill();   // sun
+  const dome = (x, r, c) => { g.fillStyle = c; g.fillRect(x - r * 0.8, base - r * 1.1, r * 1.6, r * 1.1); g.beginPath(); g.arc(x, base - r * 1.1, r * 0.85, Math.PI, 0); g.fill(); g.fillRect(x - 2, base - r * 2.25, 4, r * 0.35); };
+  const minaret = (x, ht, c) => { g.fillStyle = c; g.fillRect(x - 7, base - ht, 14, ht); g.fillRect(x - 11, base - ht * 0.7, 22, 6); g.fillRect(x - 11, base - ht * 0.4, 22, 6); g.beginPath(); g.arc(x, base - ht, 10, Math.PI, 0); g.fill(); };
+  for (let i = 0; i < 16; i++) { const x = i * 135 + 30; dome(x, 26 + (i * 37) % 20, '#f4b896'); minaret(x + 58, 70 + (i * 53) % 40, '#f4b896'); }
+  g.fillStyle = '#f4b896'; g.fillRect(0, base - 18, w, h);
+  // India Gate-style arch (drawn on its own canvas so the arch cut-out shows the sky behind)
+  const ig = document.createElement('canvas'); ig.width = 200; ig.height = 200; const q = ig.getContext('2d');
+  q.fillStyle = '#e0957a'; q.fillRect(30, 40, 140, 160); q.fillRect(22, 32, 156, 16); q.fillRect(50, 14, 100, 20);
+  q.beginPath(); q.ellipse(100, 14, 34, 10, 0, Math.PI, 0); q.fill();
+  q.globalCompositeOperation = 'destination-out';
+  q.fillRect(74, 110, 52, 90); q.beginPath(); q.arc(100, 110, 26, Math.PI, 0); q.fill();
+  g.drawImage(ig, w / 2 - 100, base - 200);
+  for (let i = 0; i < 10; i++) { const x = i * 220 + 100; if (Math.abs(x - w / 2) > 160) dome(x, 34 + (i * 29) % 16, '#e8a184'); }
+  for (let i = 0; i < 40; i++) { g.fillStyle = '#d98d78'; g.beginPath(); g.arc(i * 55 + (i % 3) * 9, base, 22 + (i * 17) % 14, Math.PI, 0); g.fill(); }  // tree line
+  const gr = g.createLinearGradient(0, base - 30, 0, h); gr.addColorStop(0, 'rgba(255,201,163,0)'); gr.addColorStop(0.5, '#ffc9a3');
+  g.fillStyle = gr; g.fillRect(0, base - 30, w, h);
+});
+const skyline = new THREE.Group(); scene.add(skyline);
+{
+  const m = new THREE.Mesh(G.plane, new THREE.MeshBasicMaterial({ map: skylineTex, transparent: true, fog: false, depthWrite: false }));
+  m.scale.set(560, 140, 1); m.position.set(0, 26, -200); m.renderOrder = -1; skyline.add(m);
+}
+const kiteMat = new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide, fog: false });
+const kites = [];
+for (let i = 0; i < 5; i++) {
+  const c = [COL.pink, COL.teal, COL.saffron, COL.marigold, '#7a3fd1'][i];
+  const geo = merge([part(G.plane, c, 0, 0, 0, 1.6, 1.6, 1, 0, 0, Math.PI / 4), part(G.box, c, 0, -1.6, 0, 0.08, 1.4, 0.05), part(G.box, COL.cream, 0.2, -2.3, 0, 0.3, 0.12, 0.05)]);
+  const k = new THREE.Mesh(geo, kiteMat); k.position.set(-50 + i * 25 + rand(-5, 5), rand(14, 22), -95 - rand(0, 20)); k.userData.ph = rand(0, 6);
+  skyline.add(k); kites.push(k);
+}
+
+/* =====================================================================
+   Road, sidewalks, ground (textures scroll so the road never ends)
+   ===================================================================== */
+const ROAD_W = 7.2, ROAD_LEN = 240, ROAD_Z = -100;
+const roadTex = canvasTex(256, 256, (g, w, h) => {
+  g.fillStyle = '#625b6b'; g.fillRect(0, 0, w, h);
+  for (let i = 0; i < 400; i++) { g.fillStyle = Math.random() < 0.5 ? '#6d6676' : '#58525f'; g.fillRect(Math.random() * w, Math.random() * h, 3, 3); }
+  g.fillStyle = '#fff8ec';
+  for (const lx of [-1.1, 1.1]) g.fillRect(w / 2 + lx / ROAD_W * w - 4, 0, 8, h / 2);     // lane dashes
+  g.fillRect(6, 0, 6, h); g.fillRect(w - 12, 0, 6, h);                                   // edge lines
+});
+roadTex.wrapS = roadTex.wrapT = THREE.RepeatWrapping; roadTex.repeat.set(1, ROAD_LEN / 8);
+const road = new THREE.Mesh(new THREE.PlaneGeometry(ROAD_W, ROAD_LEN), new THREE.MeshLambertMaterial({ map: roadTex }));
+road.rotation.x = -Math.PI / 2; road.position.set(0, 0, ROAD_Z); road.receiveShadow = true; scene.add(road);
+
+const walkTexR = canvasTex(256, 256, (g, w, h) => {
+  g.fillStyle = '#ecd2ab'; g.fillRect(0, 0, w, h);
+  g.strokeStyle = '#d6b88f'; g.lineWidth = 4;
+  for (let i = 0; i <= 4; i++) { g.beginPath(); g.moveTo(0, i * 64); g.lineTo(w, i * 64); g.stroke(); g.beginPath(); g.moveTo(i * 64, 0); g.lineTo(i * 64, h); g.stroke(); }
+  for (let i = 0; i < 4; i++) { g.fillStyle = i % 2 ? DARK : COL.marigold; g.fillRect(0, i * 64, 30, 64); }   // curb stripes
+});
+walkTexR.wrapS = walkTexR.wrapT = THREE.RepeatWrapping; walkTexR.repeat.set(1, ROAD_LEN / 4);
+const walkTexL = walkTexR.clone(); walkTexL.wrapS = walkTexL.wrapT = THREE.RepeatWrapping; walkTexL.repeat.set(1, ROAD_LEN / 4);
+for (const side of [-1, 1]) {
+  const w = new THREE.Mesh(new THREE.PlaneGeometry(6, ROAD_LEN), new THREE.MeshLambertMaterial({ map: side > 0 ? walkTexR : walkTexL }));
+  w.rotation.set(-Math.PI / 2, 0, side > 0 ? 0 : Math.PI); w.position.set(side * (ROAD_W / 2 + 3), 0.14, ROAD_Z); w.receiveShadow = true; scene.add(w);
+  scene.add(M(new THREE.BoxGeometry(0.2, 0.14, ROAD_LEN), COL.marigold, side * (ROAD_W / 2 + 0.1), 0.07, ROAD_Z));
+}
+{ const ground = M(new THREE.PlaneGeometry(400, 400), '#dfc08c', 0, -0.02, -120); ground.rotation.x = -Math.PI / 2; scene.add(ground); }
+
+/* =====================================================================
+   Characters: chunky toy rigs with googly eyes, built from primitives
+   ===================================================================== */
+function buildRig(o) {
+  const root = new THREE.Group(), body = new THREE.Group(); root.add(body);
+  const legs = [], arms = [];
+  for (const s of [-1, 1]) {
+    const hip = new THREE.Group(); hip.position.set(s * 0.16, 0.64, 0);
+    hip.add(M(capG(0.12, 0.3), o.legs, 0, -0.27, 0), M(G.box, o.shoe, 0, -0.58, 0.07, 0.25, 0.16, 0.38));
+    body.add(hip); legs.push(hip);
+  }
+  const torso = M(capG(0.32, 0.34), o.top, 0, 1.02, 0); torso.scale.z = 0.85; body.add(torso);
+  for (const s of [-1, 1]) {
+    const sh = new THREE.Group(); sh.position.set(s * 0.4, 1.25, 0);
+    sh.add(M(capG(0.1, 0.3), o.sleeve || o.top, 0, -0.22, 0), M(G.sph, o.skin, 0, -0.46, 0, 0.11));
+    sh.rotation.z = s * 0.18; sh.userData.s = s; body.add(sh); arms.push(sh);
+  }
+  const head = new THREE.Group(); head.position.set(0, 1.72, 0); body.add(head);
+  head.add(M(G.sph, o.skin, 0, 0, 0, 0.42));
+  for (const s of [-1, 1]) head.add(M(G.sph, o.skin, s * 0.41, 0, 0, 0.08));
+  head.add(M(G.sph, '#5a1d2e', 0, -0.19, 0.36, 0.1, 0.05, 0.06));     // mouth
+  head.add(M(G.sph, o.skin, 0, -0.05, 0.42, 0.07));                   // nose
+  const pupils = [];
+  for (const s of [-1, 1]) {                                           // googly eyes, slightly wall-eyed
+    const w = M(G.sph, '#ffffff', s * 0.15, 0.05, 0.33, 0.15); head.add(w);
+    const p = M(G.sph, DARK, s * 0.08, 0, 0.8, 0.42); p.userData.base = p.position.clone(); w.add(p); pupils.push(p);
+  }
+  return { root, body, legs, arms, head, pupils, torso, eye: new THREE.Vector2(), eyeV: new THREE.Vector2(), baseScale: 1 };
+}
+
+function buildCharacter(id) {
+  const O = {
+    guddu:     { skin:'#b97a50', top:'#2f6bff', legs:'#3b2551', shoe:COL.pink },
+    dadi:      { skin:'#a8693f', top:COL.pink, sleeve:COL.teal, legs:'#a8693f', shoe:'#7a4a2a' },
+    dhol:      { skin:'#8f5a36', top:COL.marigold, legs:'#fff3e0', shoe:COL.pink },
+    intern:    { skin:'#c98a5b', top:COL.teal, legs:'#6f7a3a', shoe:'#7a3fd1' },
+    cocky:     { skin:'#6b3b1f', top:'#c8a2e8', legs:'#7a7a5a', shoe:'#ffffff' },
+    inspector: { skin:'#b07448', top:'#8e8a96', legs:'#76727e', shoe:'#151018' },
+  }[id];
+  const r = buildRig(O); const { body, head, arms, torso } = r;
+  if (id === 'guddu') {
+    head.add(M(G.sph, DARK, 0, 0.2, -0.02, 0.46, 0.3, 0.46));        // messy hair + spikes
+    for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2; const c = M(G.cone, DARK, Math.cos(a) * 0.28, 0.42, Math.sin(a) * 0.28 - 0.04, 0.11, 0.26, 0.11); c.rotation.set(Math.sin(a) * 0.6, 0, -Math.cos(a) * 0.6); head.add(c); }
+    body.add(M(G.box, COL.teal, 0, 1.05, -0.45, 0.8, 0.88, 0.46));    // giant backpack
+    body.add(M(G.box, '#0e8f84', 0, 0.86, -0.7, 0.56, 0.4, 0.1));
+    body.add(M(G.box, COL.marigold, -0.12, 1.55, -0.45, 0.42, 0.12, 0.3), M(G.box, COL.pink, -0.1, 1.66, -0.45, 0.36, 0.1, 0.28));
+    const poster = M(G.cyl, COL.cream, 0.22, 1.78, -0.5, 0.07, 0.7, 0.07); poster.rotation.z = -0.25; body.add(poster);
+    for (const s of [-1, 1]) body.add(M(G.box, '#0e8f84', s * 0.2, 1.15, 0.27, 0.08, 0.5, 0.05));
+    const hood = M(G.torus, '#2f6bff', 0, 1.42, -0.15, 0.26, 0.26, 0.4); hood.rotation.x = Math.PI / 2; body.add(hood);
+    arms[1].userData.fixed = true; arms[1].rotation.set(0, 0, 2.3);   // arm raised, holding the placard
+    body.add(M(G.cyl, '#8a5a2b', 0.74, 1.95, 0.05, 0.035, 1.15, 0.035));
+    body.add(M(G.box, COL.plum, 0.74, 2.62, 0.05, 1.02, 0.62, 0.03));
+    const sign = signMesh(TEX.hmmm, 0.95, 0.55, true); sign.position.set(0.74, 2.62, 0.05); body.add(sign);
+  }
+  if (id === 'dadi') {
+    body.add(M(G.skirt, COL.pink, 0, 0.5, 0));                         // bell-shaped saree
+    const hem = M(G.torus, COL.marigold, 0, 0.1, 0, 0.58, 0.58, 0.5); hem.rotation.x = Math.PI / 2; body.add(hem);
+    const pallu = M(G.box, COL.marigold, 0, 1.02, 0, 0.12, 0.8, 0.7); pallu.rotation.z = 0.7; body.add(pallu);
+    const cardi = M(capG(0.36, 0.12), COL.teal, 0, 1.2, -0.03); cardi.scale.set(1.08, 0.9, 0.92); body.add(cardi);
+    head.add(M(G.sph, '#efe9f2', 0, 0.22, -0.06, 0.45, 0.34, 0.45), M(G.sph, '#efe9f2', 0, 0.48, -0.22, 0.17));   // white hair + bun
+    for (const s of [-1, 1]) head.add(M(G.torus, '#e0b02a', s * 0.15, 0.05, 0.45, 0.17));                        // gold glasses
+    head.add(M(G.box, '#e0b02a', 0, 0.07, 0.47, 0.08, 0.025, 0.025));
+    arms[1].add(M(G.box, '#7a4a2a', 0, -0.62, 0.05, 0.16, 0.34, 0.05));                                       // the legendary chappal
+    r.chappalArm = arms[1]; r.baseScale = 0.9;
+  }
+  if (id === 'dhol') {
+    head.add(M(G.sph, COL.pink, 0, 0.32, -0.02, 0.5, 0.4, 0.5), M(G.sph, COL.pink, 0.05, 0.62, -0.05, 0.22, 0.2, 0.22));  // turban
+    for (const s of [-1, 1]) { const m = M(capG(0.04, 0.16), DARK, s * 0.11, -0.1, 0.4); m.rotation.z = s * 1.25; head.add(m, M(G.sph, DARK, s * 0.22, -0.04, 0.37, 0.05)); }
+    head.add(M(G.box, '#ffffff', 0, -0.2, 0.39, 0.14, 0.04, 0.04));
+    const sash = M(G.torus, COL.pink, 0, 0.98, 0, 0.36, 0.36, 0.3); sash.rotation.set(Math.PI / 2, 0.45, 0); body.add(sash);
+    const drum = new THREE.Group(); drum.position.set(0, 0.9, 0.44);
+    const barrel = M(G.cyl, COL.saffron, 0, 0, 0, 0.3, 0.75, 0.3); barrel.rotation.z = Math.PI / 2; drum.add(barrel);
+    for (const s of [-1, 1]) { const c = M(G.cyl, COL.cream, s * 0.39, 0, 0, 0.32, 0.04, 0.32); c.rotation.z = Math.PI / 2; drum.add(c); }
+    for (let i = 0; i < 4; i++) { const l = M(G.box, COL.plum, -0.27 + i * 0.18, 0, 0.29, 0.03, 0.5, 0.03); l.rotation.z = (i % 2 ? 1 : -1) * 0.6; drum.add(l); }
+    body.add(drum);
+    const strap = M(G.box, COL.plum, 0, 1.15, 0.3, 0.08, 0.9, 0.05); strap.rotation.z = 0.6; body.add(strap);
+    for (const a of arms) { const st = M(G.cyl, '#8a5a2b', 0, -0.55, 0.15, 0.025, 0.5, 0.025); st.rotation.x = 1.2; a.add(st); }
+  }
+  if (id === 'intern') {
+    head.add(M(G.sph, DARK, 0, 0.18, -0.04, 0.45, 0.3, 0.45), M(G.sph, COL.saffron, 0, 0.28, 0, 0.45, 0.25, 0.45));  // hair + cap
+    head.add(M(G.box, COL.saffron, 0, 0.24, -0.48, 0.4, 0.05, 0.3));                                                   // brim, backwards
+    for (const s of [-1, 1]) { const l = M(G.box, COL.pink, s * 0.09, 1.22, 0.3, 0.03, 0.32, 0.02); l.rotation.z = -s * 0.35; body.add(l); }
+    body.add(M(G.box, '#ffffff', 0, 1.0, 0.3, 0.22, 0.15, 0.02));
+    const card = signMesh(TEX.press, 0.2, 0.13); card.position.set(0, 1.0, 0.315); body.add(card);
+    const cam = new THREE.Group(); cam.position.set(0, 1.18, 0.44);
+    cam.add(M(G.box, '#1d1a22', 0, 0, 0, 0.4, 0.26, 0.2)); const lens = M(G.cyl, '#3b3646', 0, 0, 0.16, 0.1, 0.16, 0.1); lens.rotation.x = Math.PI / 2; cam.add(lens);
+    cam.add(M(G.box, '#ffffff', 0.12, 0.14, 0, 0.08, 0.05, 0.05)); body.add(cam);
+    body.add(M(G.box, '#4b2a5e', 0, 1.05, -0.36, 0.5, 0.55, 0.25));
+    r.legs.forEach((l, i) => l.add(M(G.box, '#5c6630', (i ? 1 : -1) * 0.1, -0.25, 0.03, 0.08, 0.14, 0.16)));
+    for (const a of arms) { a.userData.fixed = true; a.rotation.set(-1.1, 0, -a.userData.s * 0.35); }   // both hands on the camera
+  }
+  if (id === 'inspector') {
+    torso.scale.set(1.25, 1.1, 1.2);
+    body.add(M(G.sph, '#8e8a96', 0, 0.95, 0.12, 0.36, 0.34, 0.3));    // belly
+    body.add(M(G.box, COL.pink, 0, 1.08, 0.37, 0.1, 0.42, 0.03), M(G.box, '#ffffff', 0, 1.32, 0.3, 0.26, 0.08, 0.06));
+    head.add(M(G.cyl, DARK, 0, 0.36, 0, 0.38, 0.14, 0.38), M(G.box, DARK, 0, 0.3, 0.36, 0.4, 0.04, 0.2));      // flat cap
+    const mo = M(capG(0.06, 0.22), DARK, 0, -0.11, 0.4); mo.rotation.z = Math.PI / 2; head.add(mo);
+    for (const s of [-1, 1]) { const b = M(G.box, DARK, s * 0.15, 0.21, 0.42, 0.16, 0.04, 0.04); b.rotation.z = s * 0.35; head.add(b); }
+    const cb = new THREE.Group(); cb.position.set(0, -0.58, 0.12);
+    cb.add(M(G.box, '#9a6a3a', 0, 0, 0, 0.36, 0.46, 0.04)); const paper = signMesh(TEX.form, 0.3, 0.38); paper.position.z = 0.025; cb.add(paper);
+    arms[1].add(cb); arms[1].userData.fixed = true; arms[1].userData.wave = true; arms[1].rotation.set(-2.4, 0, 0.3);
+  }
+  bake(r.root);
+  r.root.traverse(o => { if (o.isMesh) o.castShadow = true; });
+  return r;
+}
+// Merge each group's plain single-colour meshes into one vertex-coloured mesh (≈40 draw calls → ≈12 per character).
+// Meshes with children (eye whites carrying pupils) and textured meshes stay separate so they can still animate.
+function bake(group) {
+  for (const c of [...group.children]) if (!c.isMesh) bake(c);
+  const kids = group.children.filter(c => c.isMesh && c.children.length === 0 && c.material.isMeshLambertMaterial && !c.material.map);
+  if (kids.length < 2) return;
+  const m = new THREE.Mesh(merge(kids.map(k => part(k.geometry, k.material.color, k.position.x, k.position.y, k.position.z, k.scale.x, k.scale.y, k.scale.z, k.rotation.x, k.rotation.y, k.rotation.z))), VC);
+  for (const k of kids) group.remove(k);
+  group.add(m);
+}
+
+// Pose a rig every frame. Rigs face +Z; in-game they are turned to face down the road (-Z).
+function poseRig(r, ph, mode) {
+  const sw = Math.sin(ph);
+  r.body.position.y = 0; r.body.rotation.x = 0; r.head.rotation.set(0, 0, 0);
+  for (const a of r.arms) if (!a.userData.fixed) a.rotation.set(0, 0, a.userData.s * 0.18);
+  if (mode === 'run') {
+    r.legs[0].rotation.x = sw * 0.9; r.legs[1].rotation.x = -sw * 0.9;
+    r.arms.forEach((a, i) => { if (!a.userData.fixed) a.rotation.x = (i ? sw : -sw) * 0.8; });
+    r.body.position.y = Math.abs(Math.cos(ph)) * 0.1; r.body.rotation.x = 0.12;
+  } else if (mode === 'jump') {
+    r.legs[0].rotation.x = -1.0; r.legs[1].rotation.x = -0.5;
+    for (const a of r.arms) if (!a.userData.fixed) a.rotation.set(0, 0, a.userData.s * 2.4);
+  } else if (mode === 'slide') {
+    r.body.rotation.x = -1.05; r.body.position.y = 0.1;
+    r.legs[0].rotation.x = r.legs[1].rotation.x = -1.2;
+    for (const a of r.arms) if (!a.userData.fixed) a.rotation.set(0, 0, a.userData.s * 1.4);
+  } else {                                                           // idle: little festival dance
+    r.legs[0].rotation.x = r.legs[1].rotation.x = 0;
+    r.body.position.y = Math.abs(Math.sin(ph)) * 0.08; r.head.rotation.z = Math.sin(ph) * 0.12;
+    for (const a of r.arms) if (!a.userData.fixed) a.rotation.set(0, 0, a.userData.s * (1.2 + Math.sin(ph * 2) * 0.6));
+  }
+  for (const a of r.arms) if (a.userData.wave) a.rotation.x = -2.4 + Math.sin(ph * 1.5) * 0.45;
+}
+// Springy googly pupils: they lag behind motion and wobble.
+function jiggleEyes(r, dt, tx, ty) {
+  const k = 140, d = 9;
+  r.eyeV.x += ((tx - r.eye.x) * k - r.eyeV.x * d) * dt; r.eyeV.y += ((ty - r.eye.y) * k - r.eyeV.y * d) * dt;
+  r.eye.x = clamp(r.eye.x + r.eyeV.x * dt, -0.35, 0.35); r.eye.y = clamp(r.eye.y + r.eyeV.y * dt, -0.35, 0.35);
+  for (const p of r.pupils) { p.position.x = p.userData.base.x + r.eye.x; p.position.y = p.userData.base.y + r.eye.y; }
+}
+
+// Higgsfield character models (rigged, with a run clip). Heights are in world units; collision stays the same.
+const GLB_NAME = { guddu: 'guddu', dadi: 'dadi-ji', dhol: 'dhol-bro', intern: 'camera-intern', cocky: 'cocky', inspector: 'inspector' };
+const CHAR_HEIGHT = { guddu: 2.0, dadi: 1.75, dhol: 2.1, intern: 2.0, cocky: 1.9, inspector: 2.2 };
+function buildGlbCharacter(id) {
+  const g = GLB[GLB_NAME[id]]; if (!g || !g.animations.length) return null;
+  const clip = g.animations[0];
+  const model = g.scene, root = new THREE.Group(), body = new THREE.Group(); root.add(body); body.add(model);
+  const mixer = new THREE.AnimationMixer(model), action = mixer.clipAction(clip); action.play(); mixer.update(0.12);
+  model.updateMatrixWorld(true);
+  const box = new THREE.Box3();
+  model.traverse(o => {
+    if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; }        // skinned bounds go stale while animating
+    if (o.isSkinnedMesh) { o.computeBoundingBox(); box.union(o.boundingBox.clone().applyMatrix4(o.matrixWorld)); }
+  });
+  const H = CHAR_HEIGHT[id], s = H / (box.max.y - box.min.y);
+  model.scale.setScalar(s); model.position.y = -box.min.y * s - H / 2;  // body pivots at mid-height so flips/slides rotate nicely
+  body.position.y = H / 2;
+  return { root, body, model, mixer, action, glb: true, H, baseScale: 1, hand: model.getObjectByName('RightHand'), legs: [], arms: [], pupils: [], eye: new THREE.Vector2(), eyeV: new THREE.Vector2() };
+}
+const rigs = {};
+for (const c of CHARS) { rigs[c.id] = buildGlbCharacter(c.id) || buildCharacter(c.id); rigs[c.id].root.visible = false; scene.add(rigs[c.id].root); }
+const inspector = buildGlbCharacter('inspector') || buildCharacter('inspector'); scene.add(inspector.root);
+if (rigs.guddu.glb) {   // the Higgsfield Guddu lost his placard, so he gets one that follows his right hand
+  const pl = new THREE.Group();
+  pl.add(M(G.cyl, '#8a5a2b', 0, 0.55, 0, 0.035, 1.1, 0.035), M(G.box, COL.plum, 0, 1.2, 0, 1.02, 0.62, 0.03));
+  const sign = signMesh(TEX.hmmm, 0.95, 0.55, true); sign.position.set(0, 1.2, 0); pl.add(sign);
+  rigs.guddu.placard = pl; scene.add(pl);
+}
+// Drive a character: Higgsfield models play their run clip; code-built rigs use procedural poses.
+const _hand = new THREE.Vector3();
+function animate(r, mode, dt, rate, phase) {
+  if (!r.glb) { poseRig(r, phase, mode); return; }
+  r.action.timeScale = rate; r.mixer.update(dt);
+  r.body.rotation.set(0, 0, 0); r.body.position.y = r.H / 2;
+  if (mode === 'jump') r.body.rotation.x = clamp((CONFIG.JUMP_VELOCITY - player.vy) / (2 * CONFIG.JUMP_VELOCITY), 0, 1) * Math.PI * 2;   // front flip
+  else if (mode === 'slide') { r.body.rotation.x = -1.3; r.body.position.y = 0.45; }
+  else if (mode === 'idle') r.body.position.y = r.H / 2 + Math.abs(Math.sin(phase)) * 0.08;
+  if (r.placard) {
+    r.placard.visible = r.root.visible && mode !== 'slide';
+    if (r.placard.visible) { r.root.updateMatrixWorld(true); r.hand.getWorldPosition(_hand); r.placard.position.copy(_hand); r.placard.quaternion.copy(r.root.quaternion); }
+  }
+}
+
+/* =====================================================================
+   Props: obstacles, coins, power-ups, Jugaad Thela, FX meshes
+   ===================================================================== */
+const GEO = {};
+{ // Barricade "ADJUSTING, PLEASE WAIT": jump it
+  const p = [];
+  for (let i = 0; i < 7; i++) p.push(part(G.box, i % 2 ? COL.cream : COL.saffron, -0.9 + 0.129 + i * 0.257, 0.9, 0, 0.257, 0.22, 0.08));
+  p.push(part(G.box, COL.saffron, 0, 0.45, 0, 1.8, 0.2, 0.06));
+  for (const sx of [-1, 1]) {
+    p.push(part(G.box, COL.plum, sx * 0.85, 0.52, 0.16, 0.08, 1.08, 0.08, -0.3), part(G.box, COL.plum, sx * 0.85, 0.52, -0.16, 0.08, 1.08, 0.08, 0.3));
+    p.push(part(G.sph, '#ffb300', sx * 0.85, 1.08, 0, 0.09));
+  }
+  GEO.barricade = merge(p);
+}
+{ // Section 144 signboard: slide under it
+  const p = [];
+  for (const sx of [-1, 1]) {
+    for (let i = 0; i < 7; i++) p.push(part(G.cylLo, i % 2 ? COL.cream : COL.saffron, sx * 0.95, 0.2 + i * 0.39, 0, 0.06, 0.39, 0.06));
+    p.push(part(G.cylLo, COL.plum, sx * 0.95, 0.05, 0, 0.16, 0.1, 0.16), part(G.sphLo, COL.plum, sx * 0.95, 2.95, 0, 0.09));
+  }
+  p.push(part(G.box, COL.pink, 0, 1.88, -0.02, 2.12, 1.0, 0.08));
+  GEO.sign = merge(p);
+}
+{ // Pothole + "Work in Progress ✨" flag: jump it
+  const p = [part(G.cyl, '#2b2530', 0, 0.012, 0, 0.95, 0.02, 0.95), part(G.cyl, '#6fb7d8', 0, 0.026, 0, 0.55, 0.02, 0.55), part(G.cylLo, COL.plum, 0.78, 0.55, 0, 0.025, 1.1, 0.025)];
+  for (let i = 0; i < 14; i++) { const a = i / 14 * Math.PI * 2, s = 0.16 + (i * 7 % 5) * 0.03; p.push(part(G.box, ['#7d7884', '#9a95a0', '#5f5a66'][i % 3], Math.cos(a) * 0.95, s / 2, Math.sin(a) * 0.95, s * 1.4, s, s, 0, a, 0)); }
+  GEO.pothole = merge(p);
+}
+{ // VIP convoy car (front faces +Z, toward the player)
+  const p = [part(G.box, '#f6f4f8', 0, 0.55, -0.4, 1.7, 0.6, 3.6), part(G.box, '#9fd3ff', 0, 1.1, -0.6, 1.5, 0.52, 1.8), part(G.box, '#f6f4f8', 0, 1.38, -0.6, 1.52, 0.06, 1.82),
+    part(G.box, '#bdb8c4', 0, 0.35, 1.42, 1.74, 0.18, 0.12), part(G.box, '#fff1a0', -0.6, 0.62, 1.42, 0.3, 0.14, 0.04), part(G.box, '#fff1a0', 0.6, 0.62, 1.42, 0.3, 0.14, 0.04),
+    part(G.cylLo, COL.plum, 0.6, 1.0, 1.1, 0.015, 0.4, 0.015), part(G.box, '#ffffff', 0.72, 1.12, 1.1, 0.22, 0.14, 0.01)];
+  for (const sx of [-1, 1]) for (const z of [0.8, -1.6]) p.push(part(G.cyl, '#1b1622', sx * 0.82, 0.3, z, 0.3, 0.16, 0.3, 0, 0, Math.PI / 2));
+  for (const sx of [-1, 1]) p.push(part(G.box, COL.plum, sx * 0.95, 0.45, 2.05, 0.08, 0.9, 0.08));
+  GEO.car = merge(p);
+}
+{ // Jugaad Thela hover-cart
+  const p = [part(G.box, '#b07a45', 0, 0.3, 0, 1.3, 0.12, 1.6), part(G.box, '#8a5a2b', -0.65, 0.5, 0, 0.08, 0.35, 1.6), part(G.box, '#c99a5a', 0.65, 0.5, 0, 0.08, 0.35, 1.6),
+    part(G.box, '#8a5a2b', 0, 0.5, 0.8, 1.3, 0.35, 0.08), part(G.box, COL.pink, 0.2, 0.38, -0.2, 0.5, 0.06, 0.4, 0, 0.5, 0), part(G.box, COL.teal, -0.3, 0.38, 0.4, 0.3, 0.05, 0.3),
+    part(G.cyl, '#2a2030', -0.72, 0.3, 0, 0.3, 0.1, 0.3, 0, 0, Math.PI / 2), part(G.cyl, '#2a2030', 0.72, 0.2, 0.1, 0.2, 0.12, 0.2, 0, 0, Math.PI / 2),
+    part(G.cylLo, '#8a5a2b', -0.45, 0.75, -0.95, 0.04, 0.8, 0.04, 0.9), part(G.cylLo, '#8a5a2b', 0.45, 0.75, -0.95, 0.04, 0.8, 0.04, 0.9)];
+  GEO.thela = merge(p);
+}
+{ // 'Station Closed' metro-style entrance with a rolling shutter (can't be jumped)
+  const p = [part(G.box, '#b9b2c0', -0.95, 1.6, 0, 0.3, 3.2, 0.5), part(G.box, '#b9b2c0', 0.95, 1.6, 0, 0.3, 3.2, 0.5), part(G.box, '#3d3550', 0, 3.25, 0, 2.3, 0.7, 0.55)];
+  for (let i = 0; i < 12; i++) p.push(part(G.box, i % 2 ? '#a7a1b0' : '#8f8999', 0, 0.12 + i * 0.24, 0, 1.6, 0.22, 0.12));
+  p.push(part(G.box, COL.saffron, 0, 0.05, 0.25, 1.9, 0.1, 0.12));
+  GEO.station = merge(p);
+}
+{ // Onion-seller's cart (jumpable): the cart + a heap of onions
+  const p = [part(G.box, '#a8743f', 0, 0.55, 0, 1.6, 0.1, 1.0), part(G.box, '#8a5a2b', 0, 0.7, 0.5, 1.6, 0.3, 0.06), part(G.box, '#8a5a2b', 0, 0.7, -0.5, 1.6, 0.3, 0.06),
+    part(G.cyl, '#2a2030', -0.85, 0.3, 0, 0.3, 0.08, 0.3, 0, 0, Math.PI / 2), part(G.cyl, '#2a2030', 0.85, 0.3, 0, 0.3, 0.08, 0.3, 0, 0, Math.PI / 2)];
+  GEO.onionCart = merge(p);
+  const q = [];
+  for (let i = 0; i < 26; i++) { const a = i * 2.4, r = 0.15 + (i % 5) * 0.1, y = 0.72 + (1 - r / 0.6) * 0.32; q.push(part(G.sphLo, i % 3 ? '#b03a6a' : '#d9739a', Math.cos(a) * r * 1.4, y, Math.sin(a) * r * 0.75, 0.13, 0.12, 0.13)); }
+  GEO.onions = merge(q);
+}
+const PICKUP_GEO = {
+  thali: merge([part(G.cyl, '#d7dde4', 0, 0, 0, 0.45, 0.04, 0.45), part(G.cyl, '#b8c0ca', 0, 0.03, 0, 0.4, 0.02, 0.4),
+    part(G.cyl, '#e6eaef', -0.18, 0.08, 0.12, 0.11, 0.08, 0.11), part(G.cyl, '#e6eaef', 0.16, 0.08, 0.14, 0.11, 0.08, 0.11), part(G.cyl, '#e6eaef', 0.02, 0.08, -0.2, 0.11, 0.08, 0.11),
+    part(capLo(0.025, 0.5), '#c9d0d8', 0.3, 0.12, -0.05, 1, 1, 1, Math.PI / 2, 0.6, 0), part(G.sphLo, '#c9d0d8', 0.48, 0.12, -0.25, 0.07, 0.03, 0.09)]),
+  burger: merge([part(G.sphLo, '#e0a050', 0, 0.12, 0, 0.42, 0.2, 0.42), part(G.cyl, '#5a3018', 0, 0.02, 0, 0.4, 0.09, 0.4), part(G.cyl, '#ffd23f', 0, 0.08, 0, 0.42, 0.02, 0.42),
+    part(G.cyl, '#5bbf4a', 0, -0.04, 0, 0.44, 0.03, 0.44), part(G.cyl, '#d9963f', 0, -0.1, 0, 0.4, 0.08, 0.4)]),
+  book: merge([part(G.box, '#2346a8', 0, 0, 0, 0.5, 0.66, 0.12), part(G.box, '#fff8ec', 0.03, 0, 0, 0.44, 0.62, 0.1), part(G.box, '#e0b02a', -0.02, 0.18, 0.062, 0.3, 0.04, 0.005), part(G.box, '#e0b02a', -0.02, 0.1, 0.062, 0.2, 0.025, 0.005), part(G.sphLo, '#e0b02a', -0.02, -0.12, 0.062, 0.09, 0.09, 0.01)]),
+};
+GEO.coin = new THREE.CylinderGeometry(0.4, 0.4, 0.1, 20); GEO.coin.rotateX(Math.PI / 2); GEO.coin.clearGroups();   // one material = one draw call per coin
+const coinMats = new THREE.MeshLambertMaterial({ map: TEX.coin, emissive: '#3a2200' });
+GEO.ring = new THREE.TorusGeometry(0.62, 0.06, 8, 28);
+const LIGHT = { r: new THREE.MeshBasicMaterial({ color: '#ff2040' }), b: new THREE.MeshBasicMaterial({ color: '#2a6bff' }) };
+
+// Obstacle collision boxes: y0..y1 = vertical span that hurts, hz = half depth along the road
+const OB = {
+  barricade: { y0: 0, y1: 1.05, hz: 0.25, geo: 'barricade' },
+  sign:      { y0: 1.35, y1: 2.7, hz: 0.2, geo: 'sign' },
+  pothole:   { y0: -1, y1: 0.25, hz: 0.85, geo: 'pothole' },
+  convoy:    { y0: 0, y1: 2.0, hz: 2.15, geo: 'car' },
+  station:   { y0: 0, y1: 3.6, hz: 0.3, geo: 'station' },     // lane blocker: too tall to jump, no gap to slide
+  onion:     { y0: 0, y1: 1.0, hz: 0.6, geo: 'onionCart' },
+};
+
+// Higgsfield obstacle models: rotation to face the runner + per-axis scale to fit a lane.
+// When a model is present its collision box below is used instead of the code-built one.
+const PROP = {
+  barricade: { name: 'obstacle-barricade',   rotY: 0,            scale: [2.0, 2.0, 2.0],    box: { y0: 0, y1: 1.3, hz: 0.4 } },
+  sign:      { name: 'obstacle-section-144', rotY: Math.PI / 2,  scale: [2.8, 2.0, 2.0],    box: { y0: 1.4, y1: 2.0, hz: 0.15 } },
+  pothole:   { name: 'obstacle-pothole',     rotY: 0,            scale: [1.9, 1.9, 1.9],    box: { y0: -1, y1: 0.25, hz: 0.85 }, sink: 0.12 },
+  convoy:    { name: 'obstacle-vip-convoy',  rotY: -Math.PI / 2, scale: [2.0, 2.0, 2.4],    box: { y0: 0, y1: 1.5, hz: 1.2 } },
+};
+for (const k in PROP) if (GLB[PROP[k].name]) Object.assign(OB[k], PROP[k].box);
+function glbProp({ name, rotY = 0, scale = [1, 1, 1], sink = 0 }) {
+  const inner = GLB[name].scene.clone(true); inner.rotation.y = rotY;
+  const wrap = new THREE.Group(); wrap.add(inner); wrap.scale.set(...scale); wrap.position.y = -sink;
+  return wrap;
+}
+
+/* ---------- Object pools: nothing is created mid-game, everything is reused ---------- */
+const allPools = [];
+function makePool(create) {
+  const pool = {
+    items: [],
+    get() {
+      for (const it of pool.items) if (!it.active) { it.active = true; it.obj.visible = true; return it; }
+      const it = create(); it.active = true; pool.items.push(it); scene.add(it.obj); return it;
+    },
+    release(it) { it.active = false; it.obj.visible = false; },
+    releaseAll() { for (const it of pool.items) pool.release(it); },
+  };
+  allPools.push(pool); return pool;
+}
+const pools = {};
+for (const type of Object.keys(OB)) {
+  pools[type] = makePool(() => {
+    const g = new THREE.Group();
+    if (PROP[type] && GLB[PROP[type].name]) { g.add(glbProp(PROP[type])); return { obj: g, type, def: OB[type], active: false }; }
+    g.add(new THREE.Mesh(GEO[OB[type].geo], VC));
+    if (type === 'barricade') { const s = signMesh(TEX.barricade, 1.15, 0.58); s.position.set(0, 0.5, 0.07); g.add(s); }
+    if (type === 'sign') { const s = signMesh(TEX.s144, 1.98, 0.9); s.position.set(0, 1.88, 0.03); g.add(s); }
+    if (type === 'pothole') { const s = signMesh(TEX.wip, 0.62, 0.42, true); s.position.set(1.09, 0.88, 0); g.add(s); }
+    if (type === 'station') { const s = signMesh(TEX.station, 2.2, 0.66); s.position.set(0, 3.25, 0.29); g.add(s); }
+    if (type === 'onion') { g.add(new THREE.Mesh(GEO.onions, VC)); if (GLB['powerup-jugaad-thela']) { g.children[0].visible = false; const c = GLB['powerup-jugaad-thela'].scene.clone(true); c.scale.setScalar(1.7); c.rotation.y = Math.PI / 2; g.add(c); } }
+    if (type === 'convoy') {
+      g.add(M(G.box, LIGHT.r, -0.25, 1.48, -0.6, 0.4, 0.14, 0.22), M(G.box, LIGHT.b, 0.25, 1.48, -0.6, 0.4, 0.14, 0.22));
+      const s = signMesh(TEX.route, 1.9, 0.5); s.position.set(0, 0.75, 2.1); g.add(s);
+    }
+    return { obj: g, type, def: OB[type], active: false };
+  });
+}
+pools.coin = makePool(() => ({ obj: new THREE.Mesh(GEO.coin, coinMats), active: false }));
+const POWER_GLB = { chai: 'powerup-cutting-chai', dhol: 'powerup-dhol-beat', press: 'powerup-press-pass', thela: 'powerup-jugaad-thela' };
+const POWER_TYPES = { chai: { e: '☕', c: COL.marigold }, dhol: { e: '🥁', c: COL.pink }, press: { e: '📸', c: COL.teal }, thela: { e: '🛺', c: COL.marigold },
+  thali: { e: '🍽️', c: '#c9d2dc' }, burger: { e: '🍔', c: COL.marigold }, book: { e: '📘', c: '#2f6bff' } };
+const REAL_POWERS = ['chai', 'dhol', 'press', 'thela', 'thali'];   // what a normal power-up roll can give
+pools.power = makePool(() => {
+  const g = new THREE.Group();
+  const ring = new THREE.Mesh(GEO.ring, basicMat(COL.marigold)); g.add(ring);
+  const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: emojiTex('☕') })); spr.scale.set(0.95, 0.95, 1); g.add(spr);
+  const models = {};
+  for (const [k, name] of Object.entries(POWER_GLB)) if (GLB[name]) {
+    const holder = new THREE.Group(), m = GLB[name].scene.clone(true); m.scale.setScalar(0.95); m.position.y = -0.47;
+    holder.add(m); holder.visible = false; g.add(holder); models[k] = holder;
+  }
+  for (const [k, geo] of Object.entries(PICKUP_GEO)) {   // code-built pickups: thali, burger trap, book
+    const holder = new THREE.Group(), m = new THREE.Mesh(geo, VC); if (k === 'thali') m.rotation.x = 0.9;
+    holder.add(m); holder.visible = false; g.add(holder); models[k] = holder;
+  }
+  return { obj: g, ring, spr, models, active: false };
+});
+const particleMats = {};
+const pMat = c => particleMats[c] ||= new THREE.MeshBasicMaterial({ color: c, transparent: true });
+pools.particle = makePool(() => ({ obj: new THREE.Mesh(G.box, pMat('#ffffff')), vel: new THREE.Vector3(), active: false }));
+
+// Single-instance FX meshes
+const cart = new THREE.Group();
+if (GLB['powerup-jugaad-thela']) { const m = GLB['powerup-jugaad-thela'].scene.clone(true); m.scale.setScalar(1.35); cart.add(m); } else cart.add(new THREE.Mesh(GEO.thela, VC));
+{ const glow = M(G.cylLo, new THREE.MeshBasicMaterial({ color: COL.teal, transparent: true, opacity: 0.45 }), 0, 0.04, 0, 0.8, 0.02, 0.9); cart.add(glow); }
+cart.visible = false; scene.add(cart);
+const stars = new THREE.Group();
+for (let i = 0; i < 3; i++) { const s = new THREE.Mesh(G.oct, basicMat(COL.marigold)); s.position.set(Math.cos(i * 2.1) * 0.45, 0, Math.sin(i * 2.1) * 0.45); stars.add(s); }
+stars.visible = false; scene.add(stars);
+const shock = new THREE.Mesh(new THREE.TorusGeometry(1, 0.07, 6, 32), new THREE.MeshBasicMaterial({ color: COL.pink, transparent: true }));
+shock.rotation.x = Math.PI / 2; shock.visible = false; scene.add(shock);
+const strip = new THREE.Mesh(G.plane, new THREE.MeshBasicMaterial({ color: COL.saffron, transparent: true, opacity: 0.5, depthWrite: false }));
+strip.rotation.x = -Math.PI / 2; strip.visible = false; scene.add(strip);
+
+/* =====================================================================
+   Street decor: chai stalls, autos, DTC-style buses, garlands, crowds, pigeons
+   ===================================================================== */
+const DECOR_SPAN = 170, DECOR_FRONT = 20;   // decor past the fog (150) would be wasted draw calls
+const DG = {};
+{ // Chai stall (front = +Z): scalloped striped awning, string lights, steaming kettle, kulhad stacks, vendor, bench, marigolds
+  const W = '#9a6a3a', D = '#6e4524', p = [];
+  p.push(part(G.box, W, 0, 0.55, 0, 2.6, 1.1, 1.0), part(G.box, COL.pink, 0, 0.62, 0.51, 2.5, 0.7, 0.02), part(G.box, D, 0, 1.12, 0, 2.7, 0.06, 1.1));
+  for (let i = 0; i < 10; i++) p.push(part(G.tri, i % 2 ? COL.marigold : COL.teal, -1.15 + i * 0.255, 0.22, 0.53, 0.11, 0.16, 0.02, Math.PI, 0, 0));   // cloth fringe
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) p.push(part(G.cylLo, D, sx * 1.3, 1.6, sz * 0.55, 0.06, 3.2, 0.06));
+  p.push(part(G.box, D, 0, 1.95, -0.55, 2.5, 0.06, 0.3));                                                                   // back shelf + jars
+  for (let i = 0; i < 6; i++) p.push(part(G.cylLo, i % 2 ? '#e8b04a' : '#d9e6ee', -1 + i * 0.4, 2.12, -0.55, 0.1, 0.28, 0.1));
+  const stripes = [COL.saffron, COL.teal, COL.pink, COL.marigold, COL.teal, COL.pink];
+  for (let i = 0; i < 6; i++) {                                                                                           // awning + scallops
+    const x = -1.2 + i * 0.48;
+    p.push(part(G.box, stripes[i], x, 3.25, 0.05, 0.48, 0.08, 1.7, 0.35, 0, 0), part(G.sphLo, stripes[i], x, 2.97, 0.86, 0.24, 0.15, 0.12));
+  }
+  for (let i = 0; i < 9; i++) { const x = -1.2 + i * 0.3; p.push(part(G.cylLo, DARK, x, 2.86, 0.72, 0.01, 0.16, 0.01), part(G.sphLo, '#fff4b8', x, 2.74, 0.72, 0.075)); }  // string bulbs
+  p.push(part(G.box, '#3a3440', -0.7, 1.21, 0.05, 0.5, 0.12, 0.4), part(G.sph, '#d6d8e0', -0.7, 1.48, 0.05, 0.27, 0.23, 0.27),      // stove + kettle
+    part(G.cylLo, '#d6d8e0', -0.4, 1.56, 0.05, 0.035, 0.32, 0.035, 0, 0, -0.9), part(G.sphLo, '#9a9cab', -0.7, 1.73, 0.05, 0.07));
+  for (let s = 0; s < 3; s++) for (let k = 0; k < 4; k++) p.push(part(G.cylLo, '#c4683f', 0.25 + s * 0.28, 1.21 + k * 0.1, 0.25, 0.09, 0.1, 0.09));  // kulhads
+  // vendor behind the counter (googly eyes, moustache, yellow gamcha)
+  p.push(part(capLo(0.3, 0.35), COL.teal, 0.2, 1.45, -0.3), part(G.sphLo, '#a8693f', 0.2, 2.05, -0.3, 0.28), part(G.sphLo, DARK, 0.2, 2.2, -0.34, 0.29, 0.18, 0.29),
+    part(G.box, COL.marigold, 0.2, 1.72, -0.12, 0.5, 0.1, 0.12), part(capLo(0.07, 0.4), '#a8693f', -0.15, 1.6, -0.05, 1, 1, 1, 0.9, 0, 1.0), part(capLo(0.03, 0.14), DARK, 0.2, 1.95, -0.04, 1, 1, 1, 0, 0, Math.PI / 2));
+  for (const s of [-1, 1]) p.push(part(G.sphLo, '#ffffff', 0.2 + s * 0.1, 2.1, -0.06, 0.09), part(G.sphLo, DARK, 0.2 + s * 0.12, 2.1, -0.0, 0.04));
+  p.push(part(G.box, W, 0, 0.45, 1.05, 1.5, 0.08, 0.38));                                                                   // bench
+  for (const sx of [-1, 1]) p.push(part(G.box, D, sx * 0.6, 0.22, 1.05, 0.08, 0.44, 0.3));
+  for (const sx of [-1, 1]) { p.push(part(G.cylLo, '#c2562f', sx * 1.65, 0.28, 0.6, 0.28, 0.56, 0.28)); for (let i = 0; i < 6; i++) p.push(part(G.sphLo, i % 2 ? COL.saffron : COL.marigold, sx * 1.65 + Math.cos(i) * 0.16, 0.64, 0.6 + Math.sin(i) * 0.16, 0.14)); }
+  DG.stall = merge(p);
+}
+{ // Auto-rickshaw: green body, yellow canopy (front = +Z)
+  const p = [part(G.box, '#1f9d55', 0, 0.62, -0.1, 1.2, 0.6, 1.9), part(G.box, '#1f9d55', 0, 0.75, 0.95, 0.6, 0.7, 0.35), part(G.box, COL.marigold, 0, 1.68, -0.15, 1.3, 0.12, 1.75),
+    part(G.box, COL.marigold, 0, 1.25, -0.98, 1.26, 0.8, 0.08), part(G.box, '#a9dcff', 0, 1.3, 0.78, 1.0, 0.55, 0.04), part(G.sph, '#fff1a0', 0, 0.85, 1.13, 0.1),
+    part(G.box, '#ff4040', -0.45, 0.75, -1.06, 0.14, 0.12, 0.03), part(G.box, '#ff4040', 0.45, 0.75, -1.06, 0.14, 0.12, 0.03),
+    part(G.cyl, '#1b1622', 0, 0.25, 0.95, 0.25, 0.14, 0.25, 0, 0, Math.PI / 2), part(G.box, DARK, 0, 0.95, -0.4, 1.0, 0.25, 0.6)];
+  for (const sx of [-1, 1]) p.push(part(G.cyl, '#1b1622', sx * 0.62, 0.25, -0.6, 0.25, 0.14, 0.25, 0, 0, Math.PI / 2), part(G.box, DARK, sx * 0.6, 1.25, 0.75, 0.05, 0.8, 0.05));
+  DG.auto = merge(p);
+}
+{ // DTC-style red bus, rear lights + window band (front = +Z)
+  const p = [part(G.box, '#d8323a', 0, 1.55, 0, 2.3, 2.4, 8), part(G.box, '#3b2c4a', 0, 2.1, 0, 2.34, 0.75, 7.2), part(G.box, COL.cream, 0, 1.2, 0, 2.34, 0.14, 8.02),
+    part(G.box, '#3b2c4a', 0, 2.0, 4.0, 2.0, 0.9, 0.04), part(G.box, '#3b2c4a', 0, 2.1, -4.0, 2.0, 0.8, 0.04), part(G.box, '#a82028', 0, 2.85, 0, 2.1, 0.12, 7.6),
+    part(G.box, '#ffb347', -0.85, 0.9, -4.02, 0.2, 0.35, 0.03), part(G.box, '#ffb347', 0.85, 0.9, -4.02, 0.2, 0.35, 0.03)];
+  for (const sx of [-1, 1]) for (const z of [2.6, -2.6]) p.push(part(G.cyl, '#1b1622', sx * 1.1, 0.42, z, 0.42, 0.2, 0.42, 0, 0, Math.PI / 2));
+  DG.bus = merge(p);
+}
+// Lamp post wrapped in marigolds, with bunting strung to the next lamp `len` units down the road (-Z)
+function buntingParts(len, p = []) {
+  const cs = [COL.pink, COL.teal, COL.marigold, COL.saffron, '#7a3fd1'], n = Math.round(len / 0.85);
+  for (let i = 1; i < n; i++) { const u = i / n; p.push(part(G.tri, cs[i % 5], 0, 4.75 - 0.9 * 4 * u * (1 - u), -len * u, 0.2, 0.38, 0.03, Math.PI, Math.PI / 2, 0)); }
+  return p;
+}
+const LAMPS_PER_SIDE = 10, LAMP_GAP = DECOR_SPAN / LAMPS_PER_SIDE;
+{
+  const p = [part(G.cylLo, DARK, 0, 2.7, 0, 0.08, 5.4, 0.08), part(G.cylLo, DARK, 0, 0.15, 0, 0.18, 0.3, 0.18),
+    part(G.box, '#3a3040', 0, 5.48, 0, 0.36, 0.08, 0.36), part(G.box, '#fff1c4', 0, 5.75, 0, 0.28, 0.44, 0.28), part(G.cone, '#3a3040', 0, 6.12, 0, 0.27, 0.3, 0.27), part(G.sphLo, '#3a3040', 0, 6.32, 0, 0.06)];
+  for (let i = 0; i < 16; i++) p.push(part(G.sphLo, i % 2 ? COL.saffron : COL.marigold, 0.12 * Math.cos(i * 1.3), 1.2 + i * 0.26, 0.12 * Math.sin(i * 1.3), 0.12));
+  DG.lamp = merge(buntingParts(LAMP_GAP, p));
+  DG.bunting = merge(buntingParts(LAMP_GAP));
+}
+{
+  const p = [part(G.cylLo, '#c2562f', 0, 0.3, 0, 0.32, 0.6, 0.32)];
+  for (let i = 0; i < 8; i++) p.push(part(G.sphLo, i % 3 ? COL.saffron : COL.marigold, Math.cos(i * 0.8) * 0.2, 0.68 + (i % 2) * 0.12, Math.sin(i * 0.8) * 0.2, 0.15));
+  DG.pot = merge(p);
+}
+DG.tree = merge([part(G.cylLo, '#7a4e2c', 0, 1.4, 0, 0.2, 2.8, 0.2), part(G.sphLo, '#6aa84f', 0, 3.4, 0, 1.5, 1.2, 1.5), part(G.sphLo, '#7dbb5c', 0.8, 3.9, 0.3, 1.0), part(G.sphLo, '#5c9a45', -0.7, 4.1, -0.3, 0.95), part(G.sphLo, '#86c463', 0.1, 4.6, 0.1, 0.8)]);
+// Sandstone havelis with domes, arched windows, jharokha balconies and corner chhatris (front = +Z)
+DG.haveli = [0, 1, 2].map(v => {
+  const w = 5 + v, h = 6 + v * 1.6, col = ['#e0957a', '#d9876f', '#e8a98c'][v], trim = '#f6dcc4', win = '#6a3f4f', p = [];
+  p.push(part(G.box, col, 0, h / 2, 0, w, h, 3), part(G.box, trim, 0, h + 0.15, 0, w + 0.3, 0.3, 3.3), part(G.box, trim, 0, 0.25, 0, w + 0.2, 0.5, 3.2));
+  const floors = Math.floor((h - 1) / 2.2), cols = Math.floor(w / 1.4);
+  for (let f = 0; f < floors; f++) for (let c = 0; c < cols; c++) {
+    const x = -w / 2 + (c + 0.5) * (w / cols), y = 1.2 + f * 2.2;
+    p.push(part(G.box, win, x, y, 1.51, 0.6, 0.9, 0.04), part(G.cylLo, win, x, y + 0.45, 1.51, 0.3, 0.04, 0.3, Math.PI / 2, 0, 0));
+    if (f === 1 && c === Math.floor(cols / 2)) p.push(part(G.box, trim, x, y - 0.55, 1.8, 1.1, 0.12, 0.6), part(G.box, col, x, y + 0.75, 1.75, 1.2, 0.1, 0.55), part(G.sphLo, trim, x, y + 0.95, 1.75, 0.35, 0.25, 0.3));
+  }
+  p.push(part(G.cylLo, trim, 0, h + 0.7, 0, 1.0, 0.8, 1.0), part(G.sphLo, col, 0, h + 1.1, 0, 1.15, 1.25, 1.15), part(G.cylLo, '#e0b02a', 0, h + 2.5, 0, 0.05, 0.6, 0.05), part(G.sphLo, '#e0b02a', 0, h + 2.25, 0, 0.12));
+  for (const sx of [-1, 1]) {
+    for (const px of [-0.35, 0.35]) for (const pz of [-0.35, 0.35]) p.push(part(G.cylLo, trim, sx * (w / 2 - 0.5) + px, h + 0.6, 1.0 + pz, 0.05, 0.9, 0.05));
+    p.push(part(G.box, trim, sx * (w / 2 - 0.5), h + 1.1, 1.0, 0.95, 0.1, 0.95), part(G.sphLo, col, sx * (w / 2 - 0.5), h + 1.25, 1.0, 0.45, 0.4, 0.45));
+  }
+  // a street tree in front of each haveli, merged in to save a draw call
+  const tx = (v - 1) * 1.6;
+  p.push(part(G.cylLo, '#7a4e2c', tx, 1.4, 4.8, 0.2, 2.8, 0.2), part(G.sphLo, '#6aa84f', tx, 3.4, 4.8, 1.5, 1.2, 1.5), part(G.sphLo, '#7dbb5c', tx + 0.8, 3.9, 5.1, 1.0), part(G.sphLo, '#5c9a45', tx - 0.7, 4.1, 4.5, 0.95));
+  return merge(p);
+});
+DG.crowd = [0, 1, 2].map(v => {
+  const p = [], tops = [COL.pink, COL.teal, COL.saffron, COL.marigold, '#7a3fd1', '#2f6bff', COL.cream], skins = ['#a8693f', '#b97a50', '#8f5a36', '#c98a5b'];
+  for (let i = 0; i < 3; i++) {
+    const x = (i - 1) * 0.75 + (v - 1) * 0.1, z = ((i + v) % 2) * 0.4, top = tops[(i * 3 + v * 2) % tops.length], skin = skins[(i + v) % 4];
+    p.push(part(capLo(0.26, 0.4), top, x, 0.85, z), part(G.sphLo, skin, x, 1.55, z, 0.3));
+    for (const s of [-1, 1]) {
+      p.push(part(G.sphLo, '#ffffff', x + s * 0.11, 1.6, z + 0.24, 0.1), part(G.sphLo, DARK, x + s * 0.14, 1.6, z + 0.32, 0.045));
+      p.push(part(capLo(0.07, 0.35), top, x + s * 0.38, 1.4, z, 1, 1, 1, 0, 0, -s * 0.5));
+      p.push(part(capLo(0.09, 0.3), '#3b2551', x + s * 0.12, 0.3, z));
+    }
+  }
+  return merge(p);
+});
+{
+  const p = [];
+  for (const sx of [-1, 1]) p.push(part(G.cylLo, COL.plum, sx * 4.3, 4.1, 0, 0.08, 8.2, 0.08), part(G.sphLo, COL.marigold, sx * 4.3, 8.25, 0, 0.18));
+  for (let i = 0; i <= 24; i++) { const u = i / 24; p.push(part(G.sphLo, i % 2 ? COL.saffron : COL.marigold, -4.3 + 8.6 * u, 8.1 - 0.9 * 4 * u * (1 - u), 0, 0.16)); }
+  const cs = [COL.pink, COL.teal, COL.marigold, COL.saffron, COL.cream];
+  for (let i = 1; i < 15; i++) { const u = i / 15; p.push(part(G.tri, cs[i % 5], -4.3 + 8.6 * u, 7.7 - 0.6 * 4 * u * (1 - u), 0.2, 0.22, 0.42, 0.04, Math.PI, 0, 0)); }
+  DG.garland = merge(p);
+}
+
+// Higgsfield set-dressing models. When a file exists in models/ it replaces the code-built version.
+// `size` = longest side in world units. `face: 'road'` turns a +Z front toward the road; `rotY` is used as-is.
+const DECOR_GLB = {
+  stall:  { names: ['street-chai-stall', 'decor-chai-stall'], size: 3.0, face: 'road' },
+  auto:   { names: ['street-auto-rickshaw', 'decor-auto-rickshaw'], size: 2.6, rotY: Math.PI / 2 },   // nose is +X: park nose-away
+  bus:    { names: ['street-bus', 'decor-dtc-bus'], size: 8.4, rotY: Math.PI / 2 },
+  lamp:   { names: ['street-lamp-garland', 'decor-lamp-post'], size: 5.2, face: 'road', thin: 0.55 },   // thin: squeeze the chunky generated pole
+  pot:    { names: ['street-marigold-planter', 'decor-marigold-pot'], size: 1.1, face: 'road' },
+  tree:   { names: ['decor-neem-tree'], size: 6.0, face: 'road' },
+  haveli: { names: ['decor-haveli-a', 'decor-haveli-b', 'decor-haveli-c'], size: 11, face: 'road' },
+  crowd:  { names: ['decor-marcher-a', 'decor-marcher-b', 'decor-marcher-c'], size: 1.9, face: 'road', count: 2 },
+};
+// Pavement walkers: `fwd` is the direction the model faces in its file.
+const WALKERS = [
+  { name: 'pedestrian-shopper', fwd: '-x', size: 1.85, speed: 1.3, bob: 0.05, rate: 8 },
+  { name: 'pedestrian-office-goer', fwd: '+x', size: 1.85, speed: 1.5, bob: 0.05, rate: 8 },
+  { name: 'street-dog', fwd: '-z', size: 1.0, speed: 2.4, bob: 0.1, rate: 12 },
+];
+function glbClone(name, size) {
+  const m = GLB[name].scene.clone(true), d = new THREE.Box3().setFromObject(m).getSize(new THREE.Vector3());
+  m.scale.setScalar(size / Math.max(d.x, d.y, d.z)); return m;
+}
+function glbDecor(kind, side) {
+  const spec = DECOR_GLB[kind], names = spec ? spec.names.filter(n => GLB[n]) : [];
+  if (!names.length) return null;
+  const g = new THREE.Group(), n = spec.count || 1;
+  for (let i = 0; i < n; i++) { const m = glbClone(pick(names), spec.size); if (spec.thin) { m.scale.x *= spec.thin; m.scale.z *= spec.thin; } m.position.x = (i - (n - 1) / 2) * 0.9; g.add(m); }
+  g.rotation.y = spec.rotY ?? (side < 0 ? Math.PI / 2 : -Math.PI / 2);
+  return g;
+}
+
+const decor = [];
+// Static code-built props are merged into a few big chunks per side (one draw call each) that recycle as a unit.
+const CHUNKS = 5, CHUNK_LEN = DECOR_SPAN / CHUNKS, STATIC = new Set(['lamp', 'pot', 'stall', 'bus', 'haveli', 'tree']), chunkParts = {};
+function addStatic(geo, x, z, ry) {
+  const i = clamp(Math.floor((DECOR_FRONT - z) / CHUNK_LEN), 0, CHUNKS - 1), key = (x < 0 ? 'L' : 'R') + i, z0 = DECOR_FRONT - i * CHUNK_LEN;
+  (chunkParts[key] ||= { z0, list: [] }).list.push({ geo, m: new THREE.Matrix4().compose(new THREE.Vector3(x, 0.14, z - z0), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, ry, 0)), new THREE.Vector3(1, 1, 1)) });
+}
+function mergeGeos(list) {
+  let n = 0; const gs = list.map(({ geo, m }) => { const g = geo.clone().applyMatrix4(m); n += g.attributes.position.count; return g; });
+  const out = new THREE.BufferGeometry();
+  for (const a of ['position', 'normal', 'color']) {
+    const arr = new Float32Array(n * 3); let o = 0;
+    for (const g of gs) { arr.set(g.attributes[a].array, o); o += g.attributes[a].array.length; }
+    out.setAttribute(a, new THREE.BufferAttribute(arr, 3));
+  }
+  gs.forEach(g => g.dispose()); out.computeBoundingSphere(); return out;
+}
+function addDecor(kind, side, x, z, geo, ry = 0) {
+  let m = glbDecor(kind, side);
+  if (kind === 'stall') {   // invisible marker that puffs kettle steam
+    const k = new THREE.Object3D(); k.position.set(x, 0.14, z).add(m ? new THREE.Vector3(0, 2.0, 0) : new THREE.Vector3(-0.7, 1.85, 0.05).applyAxisAngle(new THREE.Vector3(0, 1, 0), ry));
+    scene.add(k); decor.push({ m: k, z: k.position.z, kind: 'steam', len: 0, steam: rand(0, 1) });
+  }
+  if (m && kind === 'lamp') addStatic(DG.bunting, x, z, 0);         // bunting run stays merged into the chunks
+  if (!m && STATIC.has(kind)) { addStatic(geo, x, z, ry); return; }
+  if (!m) { m = new THREE.Mesh(geo, VC); m.rotation.y = ry; }
+  m.position.set(x, kind === 'garland' ? 0 : 0.14, z); scene.add(m);
+  decor.push({ m, z, kind, len: 0, ph: rand(0, 6), honked: false, bounce: 0 });
+}
+{
+  const KINDS = [['crowd', 3, 2.5], ['tree', 1.0, 2.6], ['pot', 1.4, 1.0], ['stall', 1.8, 3.4], ['auto', 1.5, 2.4], ['bus', 0.7, 8.4]];
+  const total = KINDS.reduce((a, k) => a + k[1], 0);
+  const X = { crowd: 6.6, tree: 8.6, pot: 4.5, stall: 6.2, auto: 5.0, bus: 5.6 };
+  for (const side of [-1, 1]) {
+    const faceRoad = side < 0 ? Math.PI / 2 : -Math.PI / 2;
+    let z = DECOR_FRONT;
+    while (z > DECOR_FRONT - DECOR_SPAN) {
+      let r = Math.random() * total, k = KINDS[0]; for (const kk of KINDS) { if ((r -= kk[1]) <= 0) { k = kk; break; } }
+      const [kind, , len] = k;
+      addDecor(kind, side, side * X[kind], z - len / 2, kind === 'crowd' ? pick(DG.crowd) : DG[kind], ['stall', 'crowd'].includes(kind) ? faceRoad : kind === 'auto' || kind === 'bus' ? Math.PI : 0);
+      z -= len + rand(2.5, 6) / CONFIG.STREET_DENSITY;
+    }
+    for (let i = 0; i < LAMPS_PER_SIDE; i++) addDecor('lamp', side, side * 4.1, DECOR_FRONT - i * LAMP_GAP, DG.lamp);           // lamps + bunting runs
+    for (let z2 = DECOR_FRONT; z2 > DECOR_FRONT - DECOR_SPAN; z2 -= rand(9.5, 12)) addDecor('haveli', side, side * rand(15.5, 16.5), z2, pick(DG.haveli), faceRoad);
+  }
+  for (let z = DECOR_FRONT - 10; z > DECOR_FRONT - DECOR_SPAN; z -= 28) addDecor('garland', 0, 0, z, DG.garland);
+  const walkers = WALKERS.filter(w => GLB[w.name]);
+  if (walkers.length) for (const side of [-1, 1]) for (let i = 0; i < Math.round(7 * CONFIG.STREET_DENSITY); i++) {
+    const w = i % 3 === 2 && walkers.some(v => v.name === 'street-dog') ? walkers.find(v => v.name === 'street-dog') : pick(walkers.filter(v => v.name !== 'street-dog').length ? walkers.filter(v => v.name !== 'street-dog') : walkers);
+    const dir = Math.random() < 0.5 ? 1 : -1, m = glbClone(w.name, w.size);
+    m.rotation.y = w.fwd === '-x' ? dir * Math.PI / 2 : w.fwd === '+x' ? -dir * Math.PI / 2 : dir > 0 ? Math.PI : 0;
+    const z = DECOR_FRONT - i * (DECOR_SPAN / 7) - rand(0, 10), x = side * rand(4.7, 5.6);
+    m.position.set(x, 0.14, z); scene.add(m);
+    decor.push({ m, z, kind: 'walker', len: 0, vz: dir * w.speed, bob: w.bob, rate: w.rate, ph: rand(0, 6) });
+  }
+  for (const { z0, list } of Object.values(chunkParts)) {
+    const m = new THREE.Mesh(mergeGeos(list), VC); m.position.z = z0; scene.add(m);
+    decor.push({ m, z: z0, kind: 'chunk', len: CHUNK_LEN });
+  }
+}
+// Pigeons: sit on the sidewalk, scatter when you run past
+const pigeonBody = merge([part(G.sph, '#9a97a8', 0, 0.15, 0, 0.16, 0.14, 0.24), part(G.sph, '#7d7a8e', 0, 0.3, 0.17, 0.09), part(G.cone, '#ff9a3c', 0, 0.29, 0.28, 0.03, 0.08, 0.03, Math.PI / 2, 0, 0), part(G.box, '#6f6c80', 0, 0.17, -0.25, 0.14, 0.03, 0.14)]);
+const pigeons = [];
+for (let i = 0; i < 8; i++) {
+  const g = new THREE.Group(); g.add(new THREE.Mesh(pigeonBody, VC));
+  const wings = [-1, 1].map(s => { const w = new THREE.Group(); w.position.set(s * 0.1, 0.2, 0); w.add(M(G.box, '#858296', s * 0.14, 0, 0, 0.28, 0.02, 0.16)); g.add(w); return w; });
+  scene.add(g); const p = { g, wings, z: 0, fly: false, vel: new THREE.Vector3() }; resetPigeon(p, DECOR_FRONT - i * (DECOR_SPAN / 8)); pigeons.push(p);
+}
+function resetPigeon(p, z) { p.fly = false; p.z = z; p.g.position.set((Math.random() < 0.5 ? -1 : 1) * rand(3.9, 5.2), 0.14, z); p.g.rotation.set(0, rand(0, 6), 0); }
+
+// Ambient confetti (one instanced draw call)
+const CONF_N = isTouch ? 90 : 160;
+const confetti = new THREE.InstancedMesh(new THREE.PlaneGeometry(0.14, 0.22), new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }), CONF_N);
+const confData = [], _dummy = new THREE.Object3D(), _col = new THREE.Color();
+for (let i = 0; i < CONF_N; i++) {
+  confData.push({ x: rand(-11, 11), y: rand(0, 12), z: rand(-50, 8), r: rand(0, 6), s: rand(1, 3) });
+  confetti.setColorAt(i, _col.set(pick([COL.pink, COL.teal, COL.marigold, COL.saffron, '#7a3fd1', '#ffffff'])));
+}
+confetti.frustumCulled = false; scene.add(confetti);
+
+/* =====================================================================
+   Meme Bible set pieces: doorbell gate, the little brown visitor, phone, cape
+   ===================================================================== */
+const gate = new THREE.Group();   // generic big gate with a doorbell: every run starts with a Ding-Dong-Ditch
+{
+  const p = [part(G.box, '#e0957a', -1.7, 1.6, 0, 0.7, 3.2, 0.7), part(G.box, '#e0957a', 1.7, 1.6, 0, 0.7, 3.2, 0.7), part(G.box, '#f6dcc4', -1.7, 3.3, 0, 0.85, 0.2, 0.85), part(G.box, '#f6dcc4', 1.7, 3.3, 0, 0.85, 0.2, 0.85),
+    part(G.sphLo, '#e0957a', -1.7, 3.6, 0, 0.3), part(G.sphLo, '#e0957a', 1.7, 3.6, 0, 0.3), part(G.box, '#2a2433', 0, 2.75, 0, 2.7, 0.12, 0.1), part(G.box, '#2a2433', 0, 0.35, 0, 2.7, 0.12, 0.1),
+    part(G.box, COL.cream, -1.7, 1.45, 0.36, 0.22, 0.3, 0.04), part(G.cylLo, '#e0262a', -1.7, 1.45, 0.4, 0.06, 0.04, 0.06, Math.PI / 2, 0, 0)];
+  for (let i = 0; i < 12; i++) p.push(part(G.cylLo, '#2a2433', -1.25 + i * 0.227, 1.55, 0, 0.035, 2.4, 0.035), part(G.cone, '#e0b02a', -1.25 + i * 0.227, 2.85, 0, 0.06, 0.15, 0.06));
+  gate.add(new THREE.Mesh(merge(p), VC)); gate.rotation.y = Math.PI / 2; gate.visible = false; scene.add(gate);
+}
+const roach = { obj: new THREE.Group(), active: false, done: false, at: 0, dir: 1, x: 0, z: 0 };   // the little brown visitor
+{
+  const p = [part(G.sph, '#6b3b1f', 0, 0.09, 0, 0.13, 0.07, 0.24), part(G.sph, '#8a5230', -0.05, 0.12, -0.03, 0.07, 0.04, 0.19), part(G.sph, '#8a5230', 0.05, 0.12, -0.03, 0.07, 0.04, 0.19),
+    part(G.sph, '#4a2814', 0, 0.08, 0.24, 0.07, 0.05, 0.06)];
+  for (const s of [-1, 1]) {
+    for (const z of [-0.1, 0.02, 0.13]) p.push(part(G.box, '#3a1f0e', s * 0.15, 0.04, z, 0.18, 0.015, 0.015, 0, s * 0.3, s * -0.4));
+    p.push(part(G.box, '#3a1f0e', s * 0.08, 0.12, 0.42, 0.012, 0.012, 0.32, -0.3, s * 0.4, 0));
+  }
+  roach.body = new THREE.Mesh(merge(p), VC); roach.body.scale.setScalar(1.4); roach.obj.add(roach.body);
+  roach.hit = new THREE.Mesh(new THREE.SphereGeometry(0.9, 8, 6), new THREE.MeshBasicMaterial({ visible: false })); roach.obj.add(roach.hit);   // fat tap target
+  roach.obj.visible = false; scene.add(roach.obj);
+}
+const phone = new THREE.Group();   // for the 'chronically online' idle
+phone.add(M(G.box, '#1a1024', 0, 0, 0, 0.16, 0.3, 0.025), M(G.box, basicMat('#7fd6ff'), 0, 0.005, 0.014, 0.13, 0.25, 0.005)); phone.visible = false; scene.add(phone);
+const cape = new THREE.Group();    // Gamchha Cape: follows Guddu's upper spine
+{ const m = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 1.15, 1, 4), new THREE.MeshLambertMaterial({ map: TEX.check, side: THREE.DoubleSide })); m.position.y = -0.55; cape.add(m); cape.visible = false; scene.add(cape); }
+const brownHoodie = {};            // Mitti Brown: recolour Guddu's blue hoodie pixels in his texture
+function applyOutfit() {
+  const r = rigs.guddu; if (!r.glb) return;
+  let mesh = null; r.model.traverse(o => { if (o.isSkinnedMesh && !mesh) mesh = o; });
+  if (!mesh || !mesh.material.map) return;
+  brownHoodie.orig ||= mesh.material.map;
+  if (save.outfit === 'mitti' && !brownHoodie.tex) {
+    const img = brownHoodie.orig.image, c = document.createElement('canvas'); c.width = img.width; c.height = img.height;
+    const g = c.getContext('2d'); g.drawImage(img, 0, 0); const d = g.getImageData(0, 0, c.width, c.height), a = d.data;
+    for (let i = 0; i < a.length; i += 4) {
+      const R = a[i], Gc = a[i + 1], B = a[i + 2];
+      if (B > R + 40 && B > Gc + 15) { const L = Math.min(1.3, (0.3 * R + 0.59 * Gc + 0.11 * B) / 120); a[i] = 150 * L; a[i + 1] = 98 * L; a[i + 2] = 62 * L; }
+    }
+    g.putImageData(d, 0, 0);
+    const t2 = new THREE.CanvasTexture(c); t2.flipY = brownHoodie.orig.flipY; t2.colorSpace = brownHoodie.orig.colorSpace; t2.wrapS = brownHoodie.orig.wrapS; t2.wrapT = brownHoodie.orig.wrapT;
+    brownHoodie.tex = t2;
+  }
+  mesh.material.map = save.outfit === 'mitti' ? brownHoodie.tex : brownHoodie.orig; mesh.material.needsUpdate = true;
+}
+
+/* =====================================================================
+   Comic text pops, screen flash, sound blips
+   ===================================================================== */
+const popEls = [];
+for (let i = 0; i < 16; i++) { const d = document.createElement('div'); d.className = 'pop'; $('pops').appendChild(d); popEls.push(d); }
+let popIdx = 0; const _pv = new THREE.Vector3();
+function pop(text, x, y, z, cls = '') {
+  _pv.set(x, y, z).project(camera);
+  const el = popEls[popIdx++ % popEls.length];
+  el.textContent = text; el.className = 'pop ' + cls;
+  el.style.left = clamp((_pv.x * 0.5 + 0.5) * innerWidth, 70, innerWidth - 70) + 'px';
+  el.style.top = clamp((-_pv.y * 0.5 + 0.5) * innerHeight, 90, innerHeight - 60) + 'px';
+  el.style.setProperty('--r', rand(-12, 12).toFixed(1) + 'deg');
+  void el.offsetWidth; el.classList.add('go');
+}
+function flash() { const f = $('flash'); f.classList.remove('go'); void f.offsetWidth; f.classList.add('go'); }
+
+let actx = null;
+function beep(freq, dur = 0.1, type = 'square', vol = 0.06, slide = 0, delay = 0) {
+  if (save.muted) return;
+  try {
+    actx ||= new (window.AudioContext || window.webkitAudioContext)();
+    const t0 = actx.currentTime + delay, o = actx.createOscillator(), g = actx.createGain();
+    o.type = type; o.frequency.setValueAtTime(freq, t0);
+    if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(30, freq + slide), t0 + dur);
+    g.gain.setValueAtTime(vol, t0); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g).connect(actx.destination); o.start(t0); o.stop(t0 + dur + 0.02);
+  } catch (e) {}
+}
+const SFX = {
+  coin: () => { beep(988, 0.06, 'square', 0.04); beep(1319, 0.09, 'square', 0.04, 0, 0.05); },
+  jump: () => beep(300, 0.18, 'sine', 0.12, 400),
+  hit: () => beep(220, 0.3, 'sawtooth', 0.09, -140),
+  honk: () => { beep(440, 0.1, 'square', 0.035); beep(440, 0.12, 'square', 0.035, 0, 0.15); },
+  thump: () => beep(95, 0.28, 'sine', 0.35, -45),
+  power: () => [523, 659, 784, 1047].forEach((f, i) => beep(f, 0.1, 'triangle', 0.07, 0, i * 0.07)),
+  siren: () => [0, 1, 2, 3].forEach(i => beep(i % 2 ? 560 : 760, 0.14, 'triangle', 0.05, 0, i * 0.15)),
+  smash: () => beep(160, 0.2, 'square', 0.08, -90),
+  flash: () => beep(1900, 0.05, 'square', 0.03),
+  whistle: () => { beep(2600, 0.12, 'sine', 0.05, 300); beep(2600, 0.25, 'sine', 0.05, 200, 0.16); },
+  chase: i => { const pat = [95, 0, 150, 95, 0, 150, 95, 150]; const f = pat[i % 8]; if (f) beep(f, 0.16, 'sine', 0.22, -40); if (i % 16 === 0) beep(2400, 0.08, 'sine', 0.03, 400); },
+  thali: () => [0, 1, 2, 3, 4].forEach(i => beep(1800 + (i % 2) * 700, 0.07, 'square', 0.035, -300, i * 0.06)),
+  ding: () => { beep(988, 0.35, 'sine', 0.1); beep(784, 0.5, 'sine', 0.1, 0, 0.3); },
+};
+
+/* =====================================================================
+   Game state
+   ===================================================================== */
+let state = 'MENU';            // MENU → PLAYING ⇄ PAUSED → CAUGHT → GAMEOVER → (PLAYING | MENU)
+let selIdx = Math.max(0, CHARS.findIndex(c => c.id === save.selected));
+let t = 0, runT = 0, speed = 0, ws = 0, dist = 0, coinsRun = 0, bonus = 0, spawnZ = 0, shakeT = 0, caughtT = 0, caughtSpeed = 0;
+let chaseT = 0, chaseBeat = 0, introT = 0, revived = false, coinsBanked = 0, bijliT = 0, nextBijli = 0, menuIdle = 0, persistT = 0;
+let inspZ = CONFIG.INSPECTOR_FAR_Z, inspX = 0, runPhase = 0, warnOn = false, steamT = 0, lastLanding = 0;
+const power = { chai: 0, dhol: 0, press: 0, thali: 0, slow: 0 };
+const player = { lane: 0, x: 0, y: 0, vy: 0, onGround: true, slideT: 0, stumbleT: 0, invulnT: 0, lastSwitch: -9, thela: false,
+  jumpBuf: 0, slideBuf: false, dadiCD: 0, swingT: 0, landT: 0, rig: null, prevX: 0 };
+
+function selectChar(i) {
+  selIdx = (i + CHARS.length) % CHARS.length;
+  for (const id in rigs) rigs[id].root.visible = false;
+  if (rigs.guddu.placard) rigs.guddu.placard.visible = false;   // re-shown by animate() only while Guddu is active
+  player.rig = rigs[CHARS[selIdx].id]; player.rig.root.visible = true;
+  if (save.unlocked.includes(CHARS[selIdx].id)) { save.selected = CHARS[selIdx].id; persist(); }
+  refreshMenu();
+}
+const isUnlocked = () => save.unlocked.includes(CHARS[selIdx].id);
+
+function resetRun() {
+  for (const p of allPools) p.releaseAll();
+  t = 0; runT = 0; speed = CONFIG.START_SPEED; dist = 0; coinsRun = 0; bonus = 0; spawnZ = -30; shakeT = 0; caughtT = 0;
+  for (const k in power) power[k] = 0;
+  Object.assign(player, { lane: 0, x: 0, y: 0, vy: 0, onGround: true, slideT: 0, stumbleT: 0, invulnT: 0, lastSwitch: -9, thela: false,
+    jumpBuf: 0, slideBuf: false, cockyLife: CHARS[selIdx].id === 'cocky', dadiCD: 2, swingT: 0, landT: 0, prevX: 0 });
+  inspZ = CONFIG.INSPECTOR_FAR_Z; inspX = 0; warnOn = false;
+  strip.visible = shock.visible = cart.visible = stars.visible = false;
+  introT = 1.2; revived = false; coinsBanked = 0; bijliT = 0; nextBijli = rand(...CONFIG.BIJLI_EVERY); setLight(1); $('bijli').classList.add('hidden');
+  player.lane = -1; player.x = laneX(-1); gate.visible = true; gate.position.set(-4.7, 0.14, -0.5);
+  roach.active = false; roach.done = false; roach.obj.visible = false; roach.at = rand(...CONFIG.ROACH_WINDOW);
+  $('warn').classList.add('hidden'); $('insp').classList.remove('hot');
+  const r = player.rig.root; r.position.set(0, 0, 0); r.rotation.set(0, Math.PI, 0); r.visible = true;
+  inspector.root.visible = true;
+  hudCache = {}; hudEls.dist.textContent = '0 m'; hudEls.coins.textContent = '₹ 0'; hudEls.score.textContent = '★ 0'; hudEls.fill.style.width = '0%';
+  for (const k in pwEls) pwEls[k].classList.add('hidden');
+  camera.position.set(0, camUp, camBack);
+}
+function startGame() {
+  if (!isUnlocked()) return;
+  resetRun(); state = 'PLAYING'; menuIdle = 0;
+  save.stats.runs++; checkAch(); persist();
+  show('hud');
+}
+function goMenu() {
+  for (const p of allPools) p.releaseAll();
+  state = 'MENU'; strip.visible = shock.visible = cart.visible = stars.visible = false; $('warn').classList.add('hidden');
+  const r = player.rig.root; r.position.set(0, 0, 0); r.rotation.set(0, 0, 0); r.visible = true;
+  inspector.root.visible = false; gate.visible = roach.obj.visible = false; setLight(1); $('bijli').classList.add('hidden'); menuIdle = 0; show('menu'); refreshMenu();
+}
+function revive() {   // 'Make new handle': once per run, carry on from where you were detained
+  if (state !== 'GAMEOVER' || revived) return;
+  revived = true; save.stats.revives++; checkAch(); persist();
+  for (const type of Object.keys(OB)) for (const ob of pools[type].items) if (ob.active && ob.z > -30) pools[type].release(ob);
+  player.stumbleT = 0; player.invulnT = 2; player.y = 0; player.vy = 0; player.onGround = true; inspZ = CONFIG.INSPECTOR_FAR_Z;
+  speed = Math.max(CONFIG.START_SPEED, speed * 0.8); state = 'PLAYING'; show('hud'); pop('NEW HANDLE WHO DIS?', player.x, 2.4, -1, 'teal'); SFX.power();
+}
+function pauseGame() { if (state !== 'PLAYING') return; state = 'PAUSED'; $('pauseTip').textContent = '💡 ' + pick(TIPS); show('pause'); persist(); }
+function resumeGame() { if (state !== 'PAUSED') return; state = 'PLAYING'; show('hud'); }
+function score() { return Math.floor(dist) + coinsRun * CONFIG.COIN_SCORE + bonus; }
+
+function caught() {
+  state = 'CAUGHT'; caughtT = 0; caughtSpeed = ws; shakeT = 0.5; SFX.hit();
+  pop('CHALO THANE!', player.x, 2.4, 0.5, 'pink');
+}
+function gameOver() {
+  state = 'GAMEOVER';
+  const s = score(), isBest = s > save.best;
+  save.best = Math.max(save.best, s); save.bestDist = Math.max(save.bestDist, Math.floor(dist)); save.totalCoins += (coinsRun - coinsBanked) * CONFIG.COIN_VALUE; coinsBanked = coinsRun; persist();
+  $('oScore').textContent = s.toLocaleString(); $('oDist').textContent = Math.floor(dist) + ' m'; $('oCoins').textContent = '₹ ' + coinsRun;
+  const withheld = Math.random() < 0.3;   // alt screen: the runner gets 'withheld in your region'
+  $('oTitle').textContent = withheld ? 'WITHHELD' : 'DETAINED!';
+  $('quip').textContent = withheld ? 'This runner has been withheld in your region.' : 'Chalo thane. ' + pick(QUIPS);
+  $('btnRevive').classList.toggle('hidden', revived);
+  $('oBest').textContent = save.best.toLocaleString();
+  $('newBest').classList.toggle('hidden', !isBest);
+  $('oWallet').textContent = `Wallet: ₹ ${save.totalCoins} · Best distance ${save.bestDist} m · Space to restart`;
+  show('over');
+}
+function toast(msg) { const el = $('toast'); el.textContent = msg; el.classList.remove('hidden', 'go'); void el.offsetWidth; el.classList.add('go'); }
+function unlockAch(id) {
+  if (save.ach[id]) return; save.ach[id] = true; persist();
+  const a = ACH.find(x => x.id === id); toast(`🏆 ${a.name}`); SFX.power();
+}
+function checkAch() { for (const a of ACH) { const [h, n] = a.prog(); if (h >= n && a.id !== 'member') unlockAch(a.id); } }
+function show(id) { for (const p of ['menu', 'hud', 'pause', 'over']) $(p).classList.toggle('hidden', p !== id); }
+
+/* =====================================================================
+   Spawner: rows of obstacles, coins and power-ups (always passable)
+   ===================================================================== */
+function rowGap() {
+  const k = clamp((speed - CONFIG.START_SPEED) / (CONFIG.MAX_SPEED - CONFIG.START_SPEED), 0, 1);
+  const time = CONFIG.MAX_GAP_TIME + (CONFIG.MIN_GAP_TIME - CONFIG.MAX_GAP_TIME) * k;
+  return speed * time * rand(0.9, 1.2);
+}
+function spawnObstacle(type, lane, z) {
+  const ob = pools[type].get();
+  ob.lane = lane; ob.z = z; ob.hit = false; ob.dead = false; ob.passed = false; ob.extra = type === 'convoy' ? CONFIG.CONVOY_EXTRA_SPEED : 0; ob.warned = false;
+  ob.obj.position.set(laneX(lane), 0, z); ob.obj.rotation.set(0, 0, 0);
+  return ob;
+}
+function spawnCoins(lane, z0, n, arcZ = null) {
+  for (let i = 0; i < n; i++) {
+    const c = pools.coin.get(); c.x = laneX(lane);
+    if (arcZ === null) { c.z = z0 - i * 2; c.y = 0.8; }
+    else { const dz = (i - (n - 1) / 2) * 1.5; c.z = arcZ + dz; c.y = 0.8 + 1.5 * (1 - (dz / 4.5) ** 2); }
+    c.obj.position.set(c.x, c.y, c.z);
+  }
+}
+function spawnPickup(type, lane, z) {
+  const pu = pools.power.get();
+  pu.type = type; pu.x = laneX(lane); pu.z = z;
+  pu.ring.material = basicMat(POWER_TYPES[type].c); pu.ring.visible = type !== 'book';   // the book is a collectible, not a power-up
+  for (const k in pu.models) pu.models[k].visible = k === type;
+  pu.model = pu.models[type] || null; pu.spr.visible = !pu.model;
+  if (!pu.model) { pu.spr.material.map = emojiTex(POWER_TYPES[type].e); pu.spr.material.needsUpdate = true; }
+  pu.obj.position.set(pu.x, 1.1, pu.z);
+}
+function spawnRow(z, gap) {
+  const convoyActive = pools.convoy.items.some(o => o.active && !o.dead);
+  const lanes = [-1, 0, 1].sort(() => Math.random() - 0.5);
+  let used = [];
+  if (dist > CONFIG.CONVOY_MIN_DIST && !convoyActive && Math.random() < CONFIG.CONVOY_CHANCE) {
+    spawnObstacle('convoy', lanes[0], z); used = [lanes[0]];
+    if (Math.random() < 0.4) { spawnObstacle(Math.random() < 0.5 ? 'barricade' : 'pothole', lanes[1], z); used.push(lanes[1]); }
+  } else if (dist > CONFIG.STATION_MIN_DIST && Math.random() < CONFIG.STATION_CHANCE) {   // blocks a lane; one other lane stays clear
+    spawnObstacle('station', lanes[0], z); used = [lanes[0]];
+    if (Math.random() < 0.4) { spawnObstacle(Math.random() < 0.5 ? 'barricade' : 'onion', lanes[1], z); used.push(lanes[1]); }
+  } else {
+    let n = 1;
+    if (dist > CONFIG.MULTI_MIN_DIST && Math.random() < 0.45) n = 2;
+    if (dist > CONFIG.TRIPLE_MIN_DIST && Math.random() < 0.15) n = 3;   // every non-convoy obstacle can be jumped or slid, so 3 is still fair
+    for (let i = 0; i < n; i++) {
+      const r = Math.random(), type = r < CONFIG.ONION_WEIGHT ? 'onion' : r < 0.45 ? 'barricade' : r < 0.72 ? 'sign' : 'pothole';
+      const ob = spawnObstacle(type, lanes[i], z); used.push(lanes[i]);
+      if (type !== 'sign' && Math.random() < CONFIG.COIN_ARC_CHANCE) spawnCoins(lanes[i], 0, 5, z);
+    }
+  }
+  const free = [-1, 0, 1].filter(l => !used.includes(l));
+  const lane = free.length ? pick(free) : pick([-1, 0, 1]);
+  const roll = Math.random();
+  if (roll < CONFIG.BOOK_CHANCE) spawnPickup('book', lane, z + gap / 2);
+  else if (roll < CONFIG.BOOK_CHANCE + CONFIG.BURGER_CHANCE) spawnPickup('burger', lane, z + gap / 2);
+  else if (roll < CONFIG.BOOK_CHANCE + CONFIG.BURGER_CHANCE + CONFIG.POWERUP_CHANCE) spawnPickup(pick(REAL_POWERS.filter(k => !(k === 'thela' && player.thela))), lane, z + gap / 2);
+  else if (Math.random() < CONFIG.COIN_CHANCE) {
+    spawnCoins(lane, z + gap / 2 + 5, 6);
+  }
+}
+
+/* =====================================================================
+   Player actions
+   ===================================================================== */
+function moveLane(d) {
+  if (state !== 'PLAYING' || introT > 0) return;
+  const nl = clamp(player.lane + d, -1, 1);
+  if (nl !== player.lane) { player.lane = nl; player.lastSwitch = runT; beep(520 + d * 60, 0.05, 'triangle', 0.04); }
+}
+function jump() {
+  if (state !== 'PLAYING' || introT > 0) return;
+  if (player.onGround) {
+    player.vy = CONFIG.JUMP_VELOCITY; player.onGround = false; player.slideT = 0; SFX.jump();
+  } else player.jumpBuf = 0.15;     // pressed a hair early: jump on landing
+}
+function slide() {
+  if (state !== 'PLAYING' || introT > 0) return;
+  if (!player.onGround) { player.vy = -CONFIG.FAST_FALL_VELOCITY; player.slideBuf = true; return; }
+  player.slideT = CONFIG.SLIDE_TIME; beep(200, 0.12, 'sine', 0.06, -80);
+}
+function onLand() {
+  player.landT = 0.15; burst(player.x, 0.1, 0.2, 6, ['#e9d3b0', '#ffffff'], { speed: 2.5, up: 1.5, size: 0.12, life: 0.4 });
+  if (CHARS[selIdx].id === 'dhol') dholShock();
+  if (player.slideBuf) { player.slideBuf = false; player.slideT = CONFIG.SLIDE_TIME; }
+  if (player.jumpBuf > 0) { player.jumpBuf = 0; jump(); }
+}
+
+/* ---------- Character abilities ---------- */
+function dholShock() {
+  shock.visible = true; shock.position.set(player.x, 0.1, -1); shock.userData.t = 0; SFX.thump();
+  let cleared = false;
+  for (const type of ['barricade', 'pothole']) for (const ob of pools[type].items)
+    if (ob.active && !ob.dead && ob.lane === player.lane && ob.z > -CONFIG.DHOL_SHOCK_RANGE && ob.z < 0.5) { knock(ob, null); cleared = true; }
+  if (cleared || runT - lastLanding > 2) { pop('DHAM!', player.x, 1.6, -2, 'pink'); lastLanding = runT; }
+}
+function dadiSwat() {
+  for (const ob of pools.barricade.items) {
+    if (ob.active && !ob.dead && ob.lane === player.lane && ob.z > -14 && ob.z < -2.5) {
+      knock(ob, 'THWACK!'); player.swingT = 0.4; player.dadiCD = CONFIG.DADI_COOLDOWN; SFX.smash(); return;
+    }
+  }
+}
+
+/* ---------- Hits ---------- */
+function escaped() {   // shook the Inspector off (recovered, or stunned him with a thali)
+  player.stumbleT = 0; save.stats.escapes++; checkAch();
+  pop(pick(['PHEW!', 'CARDIO!', 'NOT FOR SALE!']), player.x, 2.2, 0, 'teal');
+}
+function tears() { const el = $('tears'); el.classList.remove('go'); void el.offsetWidth; el.classList.add('go'); }
+function knock(ob, text) {          // send an obstacle flying, cartoon style (nobody gets hurt)
+  ob.dead = true; ob.vy = 7; ob.vx = (ob.lane === 0 ? (Math.random() < 0.5 ? -1 : 1) : Math.sign(ob.lane)) * 6; ob.spin = rand(-1, 1) || 0.5;
+  burst(ob.obj.position.x, 1, ob.z, 14, [COL.pink, COL.teal, COL.marigold, COL.saffron], { speed: 6, up: 5, size: 0.14, life: 0.8 });
+  if (text) pop(text, ob.obj.position.x, 1.6, ob.z, 'orange');
+}
+function hit(ob) {
+  if (ob.hit || ob.dead) return;
+  if (power.press > 0 || power.chai > 0) { knock(ob, power.press > 0 ? pick(['EXPOSED!', 'DISHOOM!']) : 'DISHOOM!'); SFX.smash(); shakeT = 0.12; return; }
+  if (power.dhol > 0 && ob.type === 'barricade') { knock(ob, 'DISHOOM!'); SFX.smash(); bonus += 5; shakeT = 0.12; return; }
+  if (player.invulnT > 0) return;
+  ob.hit = true;
+  if (ob.type === 'convoy') knock(ob, null);         // never leave the player stuck inside a car
+  if (player.thela) {
+    player.thela = false; player.invulnT = CONFIG.INVULN_AFTER_HIT; shakeT = 0.3; SFX.smash();
+    burst(player.x, 0.5, 0, 16, ['#b07a45', '#8a5a2b', COL.pink], { speed: 6, up: 5, size: 0.2, life: 0.9 });
+    pop('JUGAAD!', player.x, 2, 0, 'teal'); return;
+  }
+  if (player.cockyLife) {   // cockroaches survive everything, once
+    player.cockyLife = false; player.invulnT = CONFIG.INVULN_AFTER_HIT; shakeT = 0.3; SFX.smash();
+    burst(player.x, 0.5, 0, 16, ['#6b3b1f', '#c8a2e8', '#ffffff'], { speed: 6, up: 5, size: 0.2, life: 0.9 });
+    pop('UNKILLABLE!', player.x, 2, 0, 'teal'); return;
+  }
+  if (ob.type === 'onion') tears();
+  if (player.stumbleT > 0 && power.thali <= 0) { caught(); return; }
+  if (player.stumbleT > 0) { player.invulnT = CONFIG.INVULN_AFTER_HIT; shakeT = 0.3; SFX.hit(); pop('OOF!', player.x, 2.2, 0, 'white'); return; }   // thali-stunned: no catch
+  player.stumbleT = CONFIG.STUMBLE_RECOVER; player.invulnT = CONFIG.INVULN_AFTER_HIT; shakeT = 0.4;
+  speed = Math.max(CONFIG.START_SPEED, speed * 0.85); SFX.hit(); SFX.whistle();
+  pop('OOF!', player.x, 2.2, 0, 'white');
+  setTimeout(() => { if (state === 'PLAYING') pop(pick(INSPECTOR_LINES), inspX, 2.6, inspZ - 1, 'pink'); }, 350);
+}
+
+/* ---------- Particles ---------- */
+function burst(x, y, z, n, colors, { speed = 4, up = 3, size = 0.12, life = 0.6, grav = 14, world = 1 } = {}) {
+  for (let i = 0; i < n; i++) {
+    const p = pools.particle.get();
+    p.obj.material = pMat(pick(colors)); p.obj.position.set(x, y, z);
+    p.vel.set(rand(-1, 1) * speed, rand(0.3, 1) * up, rand(-1, 1) * speed * 0.5);
+    p.life = p.max = life * rand(0.7, 1.2); p.size = size * rand(0.7, 1.3); p.grav = grav; p.world = world;
+    p.obj.rotation.set(rand(0, 6), rand(0, 6), 0);
+  }
+}
+
+/* =====================================================================
+   Per-frame update
+   ===================================================================== */
+let hudCache = {};
+const hudEls = { dist: $('hDist'), coins: $('hCoins'), score: $('hScore'), ability: $('ability'), fill: $('inspFill'), insp: $('insp') };
+const pwEls = {}; document.querySelectorAll('.pw').forEach(el => pwEls[el.dataset.k] = el);
+function setHud(key, el, v) { if (hudCache[key] !== v) { hudCache[key] = v; el.textContent = v; } }
+
+function setLight(f) {   // 1 = normal daylight, ~0 = Bijli Gayi blackout
+  hemi.intensity = LIGHT_BASE.hemi * (0.1 + 0.9 * f); sun.intensity = LIGHT_BASE.sun * f; scene.backgroundIntensity = 0.25 + 0.75 * f;
+  scene.fog.color.copy(FOG).lerp(_dark, 1 - f); torch.intensity = (1 - f) * 90;
+}
+const _dark = new THREE.Color('#2a2238');
+function catchRoach() {
+  roach.active = false; roach.done = true; roach.obj.visible = false; bonus += CONFIG.ROACH_BONUS;
+  pop('HONORARY MEMBER!', roach.x, 1.4, roach.z, 'orange'); burst(roach.x, 0.4, roach.z, 14, ['#6b3b1f', '#e0b02a', COL.cream], { speed: 3, up: 4, size: 0.12, life: 0.7 });
+  unlockAch('member');
+}
+function updatePlaying(dt) {
+  save.stats.playSec += dt;
+  if ((persistT += dt) > 15) { persistT = 0; persist(); if (save.stats.playSec >= 11 * 3600) checkAch(); }
+  if (introT > 0) {   // Ding-Dong-Ditch: press the gate's doorbell, then BHAAG!
+    const before = introT; introT -= dt; ws = 0;
+    if (before > 0.8 && introT <= 0.8) { pop('DING-DONG!', -4.2, 2.6, -0.5, 'white'); SFX.ding(); }
+    if (before > 0.25 && introT <= 0.25) { pop('BHAAG!', player.x, 2.4, -2, 'pink'); beep(660, 0.1, 'triangle', 0.06); beep(880, 0.14, 'triangle', 0.06, 0, 0.1); }
+    return;
+  }
+  runT += dt;
+  speed = Math.min(CONFIG.MAX_SPEED, speed + CONFIG.SPEED_RAMP * dt);
+  ws = speed * (power.chai > 0 ? CONFIG.CHAI_SPEED_MULT : 1) * (power.slow > 0 ? CONFIG.BURGER_SLOW : 1);
+  dist += ws * dt;
+  for (const k in power) power[k] = Math.max(0, power[k] - dt);
+
+  // --- player movement ---
+  const tx = laneX(player.lane), step = CONFIG.LANE_WIDTH / CONFIG.LANE_SWITCH_TIME * dt;
+  player.prevX = player.x;
+  player.x = Math.abs(tx - player.x) <= step ? tx : player.x + Math.sign(tx - player.x) * step;
+  if (!player.onGround) {
+    player.vy -= CONFIG.GRAVITY * dt; player.y += player.vy * dt;
+    if (player.y <= 0) { player.y = 0; player.vy = 0; player.onGround = true; onLand(); }
+  }
+  player.jumpBuf = Math.max(0, player.jumpBuf - dt);
+  player.slideT = Math.max(0, player.slideT - dt);
+  player.invulnT = Math.max(0, player.invulnT - dt);
+  player.landT = Math.max(0, player.landT - dt);
+  player.swingT = Math.max(0, player.swingT - dt);
+  if (player.stumbleT > 0) { player.stumbleT -= dt; if (player.stumbleT <= 0) escaped(); }
+
+  // --- abilities ---
+  if (CHARS[selIdx].id === 'dadi') { player.dadiCD -= dt; if (player.dadiCD <= 0) dadiSwat(); }
+  if (power.chai > 0 && (steamT -= dt) <= 0) { steamT = 0.05; burst(player.x + rand(-0.2, 0.2), 1.3 + player.y, 0.5, 1, ['#ffffff', '#fff3e0'], { speed: 0.4, up: 1.5, size: 0.22, life: 0.7, grav: -1 }); }
+
+  // --- the little brown visitor (once per run) ---
+  if (!roach.done && !roach.active && dist > roach.at) { roach.active = true; roach.dir = Math.random() < 0.5 ? 1 : -1; roach.x = -roach.dir * 4.6; roach.z = -32; roach.obj.visible = true; }
+  if (roach.active) {
+    roach.x += roach.dir * 2.4 * dt; roach.z += ws * dt;
+    roach.obj.position.set(roach.x, 0.02, roach.z); roach.obj.rotation.y = roach.dir * Math.PI / 2; roach.body.rotation.z = Math.sin(t * 40) * 0.08;
+    if (Math.abs(roach.x - player.x) < 0.7 && Math.abs(roach.z) < 0.8 && player.y < 0.6) catchRoach();
+    else if (Math.abs(roach.x) > 5 || roach.z > 8) { roach.active = false; roach.done = true; roach.obj.visible = false; }   // it got away
+  }
+  // --- Bijli Gayi: lights flicker, then 5 s of phone-torch running ---
+  if (dist > 400 && bijliT <= 0 && runT > nextBijli) { bijliT = CONFIG.BIJLI_TIME + 0.8; $('bijli').classList.remove('hidden'); beep(120, 0.4, 'sawtooth', 0.05, -60); }
+  if (bijliT > 0) {
+    bijliT -= dt;
+    const f = bijliT > CONFIG.BIJLI_TIME ? (Math.random() < 0.5 ? 1 : 0.15) : bijliT < 0.4 ? 1 - bijliT / 0.4 : 0;
+    setLight(f); torch.position.set(player.x, 1.6 + player.y, -0.6); torch.target.position.set(player.x, 0, -18);
+    if (bijliT <= 0) { setLight(1); $('bijli').classList.add('hidden'); nextBijli = runT + rand(...CONFIG.BIJLI_EVERY); }
+  }
+
+  // --- spawn ---
+  spawnZ += ws * dt;
+  while (spawnZ > -CONFIG.SPAWN_AHEAD) { const g = rowGap(); spawnZ -= g; spawnRow(spawnZ, g); }
+
+  // --- Inspector ---
+  const near = player.stumbleT > 0 && power.thali <= 0;   // a thali clatter stuns him
+  inspZ = damp(inspZ, near ? CONFIG.INSPECTOR_NEAR_Z : CONFIG.INSPECTOR_FAR_Z, near ? 3 : power.thali > 0 ? 3 : 0.8, dt);
+  if (near && (chaseT -= dt) <= 0) { chaseT = 0.21; chaseBeat++; SFX.chase(chaseBeat); }   // original dhol + whistle chase sting
+  inspX = damp(inspX, player.x, 4, dt);
+
+  // --- HUD ---
+  setHud('dist', hudEls.dist, Math.floor(dist) + ' m');
+  setHud('coins', hudEls.coins, '₹ ' + coinsRun);
+  setHud('score', hudEls.score, '★ ' + score());
+  const id = CHARS[selIdx].id;
+  setHud('ability', hudEls.ability, id === 'dadi' ? (player.dadiCD <= 0 ? '🩴 READY' : '🩴 ' + Math.ceil(player.dadiCD) + 's') : id === 'dhol' ? '🥁 BEAT DROP' : id === 'intern' ? '📸 NEAR-MISS +25' : id === 'cocky' ? (player.cockyLife ? '🪳 1 LIFE' : '🪳 USED') : '🤔 HMMM');
+  const prox = clamp(1 - (inspZ - CONFIG.INSPECTOR_NEAR_Z) / (CONFIG.INSPECTOR_FAR_Z - CONFIG.INSPECTOR_NEAR_Z), 0, 1);
+  const w = Math.round(prox * 100) + '%'; if (hudCache.fill !== w) { hudCache.fill = w; hudEls.fill.style.width = w; }
+  if (hudCache.hot !== near) { hudCache.hot = near; hudEls.insp.classList.toggle('hot', near); }
+  for (const k of ['chai', 'dhol', 'press', 'thali', 'slow']) {
+    const on = power[k] > 0; if (hudCache['pw' + k] !== on) { hudCache['pw' + k] = on; pwEls[k].classList.toggle('hidden', !on); }
+    if (on) pwEls[k].querySelector('.arc').style.strokeDashoffset = (125.7 * (1 - power[k] / CONFIG.POWERUP_TIME[k])).toFixed(1);
+  }
+  if (hudCache.pwthela !== player.thela) { hudCache.pwthela = player.thela; pwEls.thela.classList.toggle('hidden', !player.thela); }
+}
+
+function updateEntities(dt) {
+  const playing = state === 'PLAYING';
+  const pTop = player.y + (player.slideT > 0 ? 0.8 : 1.7), pBot = player.y;
+  let convoyWarn = null;
+
+  for (const type of Object.keys(OB)) for (const ob of pools[type].items) {
+    if (!ob.active) continue;
+    ob.z += (ws + (ob.dead ? 0 : ob.extra)) * dt;
+    const o = ob.obj; o.position.z = ob.z;
+    if (ob.dead) {
+      o.position.x += ob.vx * dt; ob.vy -= 25 * dt; o.position.y += ob.vy * dt; o.rotation.x += ob.spin * dt * 8; o.rotation.z += ob.spin * dt * 5;
+      if (o.position.y < -6 || ob.z > 14) pools[type].release(ob);
+      continue;
+    }
+    if (ob.z - ob.def.hz > 14) { pools[type].release(ob); continue; }
+    if (type === 'convoy') {
+      const front = ob.z + ob.def.hz;
+      // the convoy shoves anything in its lane out of the way
+      for (const t2 of ['barricade', 'sign', 'pothole', 'onion', 'station']) for (const o2 of pools[t2].items)
+        if (o2.active && !o2.dead && o2.lane === ob.lane && Math.abs(o2.z - ob.z) < ob.def.hz + 0.5) knock(o2, null);
+      for (const c of pools.coin.items) if (c.active && Math.abs(c.x - laneX(ob.lane)) < 0.1 && Math.abs(c.z - ob.z) < ob.def.hz + 0.5) pools.coin.release(c);
+      if (playing && front < 0 && -front / (ws + ob.extra) < CONFIG.CONVOY_WARN_TIME) convoyWarn = ob;
+    }
+    if (!playing) continue;
+    // --- collision (forgiving boxes) ---
+    const ox = laneX(ob.lane);
+    if (Math.abs(ox - player.x) < 0.4 + 0.75 && Math.abs(ob.z) < ob.def.hz * 0.85 + 0.35 && pTop > ob.def.y0 && pBot < ob.def.y1 * 0.92) hit(ob);
+    // --- near-miss ---
+    if (!ob.passed && ob.z - ob.def.hz > 0.5) {
+      ob.passed = true;
+      const nearMiss = !ob.hit && (ob.lane === player.lane || (Math.abs(ob.lane - player.lane) === 1 && runT - player.lastSwitch < CONFIG.NEAR_MISS_LANE_TIME));
+      if (nearMiss && type === 'onion') tears();
+      if (nearMiss && CHARS[selIdx].id === 'intern') { bonus += CONFIG.INTERN_BONUS; flash(); SFX.flash(); pop('VIRAL! +' + CONFIG.INTERN_BONUS, player.x, 2.4, -1, 'teal'); }
+    }
+  }
+  // convoy warning: flashing lane strip + banner
+  if (convoyWarn) {
+    const front = convoyWarn.z + convoyWarn.def.hz;
+    strip.visible = true; strip.position.set(laneX(convoyWarn.lane), 0.03, front / 2); strip.scale.set(1.9, -front, 1);
+    strip.material.opacity = 0.35 + 0.3 * Math.sin(t * 25);
+    if (!convoyWarn.warned) { convoyWarn.warned = true; SFX.siren(); $('warnLane').textContent = ['⬅ LEFT LANE', 'MIDDLE LANE', 'RIGHT LANE ➡'][convoyWarn.lane + 1] + ' · ROUTE DIVERTED'; }
+  } else strip.visible = false;
+  if (warnOn !== !!convoyWarn) { warnOn = !!convoyWarn; $('warn').classList.toggle('hidden', !warnOn); }
+  const blink = Math.sin(t * 20) > 0; LIGHT.r.color.set(blink ? '#ff2040' : '#5a0a14'); LIGHT.b.color.set(blink ? '#10183a' : '#2a6bff');
+
+  // coins
+  for (const c of pools.coin.items) {
+    if (!c.active) continue;
+    c.z += ws * dt; c.obj.position.set(c.x, c.y + Math.sin(t * 4 + c.z) * 0.08, c.z); c.obj.rotation.y += dt * 4;
+    if (c.z > 8) { pools.coin.release(c); continue; }
+    if (playing && Math.abs(c.z) < 0.8 && Math.abs(c.x - player.x) < 0.9 && c.y > pBot - 0.3 && c.y < pTop + 0.3) {
+      coinsRun++; pools.coin.release(c); SFX.coin();
+      pop('+' + CONFIG.COIN_SCORE, c.x, c.y + 0.6, c.z, 'coin');
+      burst(c.x, c.y, c.z, 5, ['#ffd23f', '#fff2a8'], { speed: 2, up: 2, size: 0.08, life: 0.35, grav: 4 });
+    }
+  }
+  // power-ups
+  for (const pu of pools.power.items) {
+    if (!pu.active) continue;
+    pu.z += ws * dt; pu.obj.position.set(pu.x, 1.1 + Math.sin(t * 3) * 0.15, pu.z); pu.ring.rotation.y += dt * 2.5; if (pu.model) pu.model.rotation.y += dt * 2;
+    if (pu.z > 8) { pools.power.release(pu); continue; }
+    if (playing && Math.abs(pu.z) < 1 && Math.abs(pu.x - player.x) < 1 && pTop > 0.6 && pBot < 1.8) { pools.power.release(pu); activatePower(pu.type); }
+  }
+  // particles
+  for (const p of pools.particle.items) {
+    if (!p.active) continue;
+    p.life -= dt; if (p.life <= 0) { pools.particle.release(p); continue; }
+    p.vel.y -= p.grav * dt; p.obj.position.addScaledVector(p.vel, dt); p.obj.position.z += ws * dt * p.world;
+    p.obj.rotation.x += dt * 6; const s = p.size * (0.4 + 0.6 * p.life / p.max); p.obj.scale.set(s, s, s);
+    p.obj.material.opacity = Math.min(1, p.life / p.max * 2);
+  }
+}
+function activatePower(type) {
+  if (type === 'burger') {   // trap pickup: looks like a power-up, slows you down
+    power.slow = CONFIG.POWERUP_TIME.slow; beep(180, 0.3, 'sawtooth', 0.06, -80); pop('Bad optics.', player.x, 2.3, -1, 'white'); return;
+  }
+  if (type === 'book') {
+    coinsRun += CONFIG.BOOK_COINS; SFX.power(); pop('REQUIRED READING +' + CONFIG.BOOK_COINS, player.x, 2.3, -1, 'teal');
+    burst(player.x, 1.2, 0, 14, ['#2f6bff', '#e0b02a', '#ffffff'], { speed: 4, up: 4, size: 0.12, life: 0.7 }); return;
+  }
+  if (type === 'thali') {   // steel thali + spoon: the clatter stuns the Inspector
+    power.thali = CONFIG.POWERUP_TIME.thali; SFX.thali(); pop('THALI TIME!', player.x, 2.3, -1, 'pink');
+    if (player.stumbleT > 0) escaped();
+    burst(inspX, 2.0, Math.min(inspZ, 8), 10, ['#d7dde4', '#ffffff'], { speed: 3, up: 3, size: 0.12, life: 0.6 }); return;
+  }
+  SFX.power();
+  const label = { chai: 'CUTTING CHAI!', dhol: 'DHOL BEAT!', press: 'PRESS PASS!', thela: 'JUGAAD THELA!' }[type];
+  pop(label, player.x, 2.3, -1, type === 'dhol' ? 'pink' : type === 'press' ? 'teal' : '');
+  if (type === 'thela') player.thela = true; else power[type] = CONFIG.POWERUP_TIME[type];
+  if (type === 'press') flash();
+  burst(player.x, 1.2, 0, 12, [POWER_TYPES[type].c, '#ffffff'], { speed: 4, up: 4, size: 0.12, life: 0.6 });
+}
+
+const _steam = new THREE.Vector3();
+function updateWorld(dt) {
+  // scroll the road + sidewalks
+  roadTex.offset.y += ws * dt / 8; walkTexR.offset.y += ws * dt / 4; walkTexL.offset.y -= ws * dt / 4;
+  for (const d of decor) {
+    d.z += (ws + (d.vz || 0)) * dt; if (d.z < DECOR_FRONT - DECOR_SPAN - 10) d.z += DECOR_SPAN;   // walkers heading away wrap round
+    if (d.z - d.len > DECOR_FRONT + 6) { d.z -= DECOR_SPAN; d.honked = false; }   // chunks recycle once fully behind the camera
+    d.m.position.z = d.z;
+    if (d.kind === 'crowd') d.m.position.y = 0.14 + Math.abs(Math.sin(t * 6 + d.ph)) * 0.22;
+    if (d.kind === 'walker') d.m.position.y = 0.14 + Math.abs(Math.sin(t * d.rate + d.ph)) * d.bob;
+    if (d.kind === 'steam' && d.z > -70 && d.z < 8 && (d.steam -= dt) <= 0) {   // kettle steam
+      d.steam = 0.18; _steam.copy(d.m.position);
+      burst(_steam.x, _steam.y, _steam.z, 1, ['#ffffff', '#fff3e6'], { speed: 0.25, up: 1.2, size: 0.2, life: 1.0, grav: -0.6 });
+    }
+    if (d.kind === 'auto') {
+      if (state === 'PLAYING' && !d.honked && d.z > -22) { d.honked = true; if (Math.random() < 0.3) { d.bounce = 0.5; pop('PEE-PEE!', d.m.position.x, 2.2, d.z, 'white'); SFX.honk(); } }
+      d.bounce = Math.max(0, d.bounce - dt); d.m.position.y = 0.14 + Math.abs(Math.sin(d.bounce * 25)) * d.bounce * 0.4;
+    }
+  }
+  if (gate.visible) { gate.position.z += ws * dt; if (gate.position.z > 30) gate.visible = false; }
+  for (const p of pigeons) {
+    p.z += ws * dt;
+    if (!p.fly && p.z > -12 && ws > 0) { p.fly = true; p.vel.set(Math.sign(p.g.position.x) * rand(1, 3), rand(3, 5), rand(-2, 0)); p.g.rotation.y = Math.atan2(p.vel.x, p.vel.z); }
+    if (p.fly) { p.g.position.x += p.vel.x * dt; p.g.position.y += p.vel.y * dt; p.z += p.vel.z * dt; for (const w of p.wings) w.rotation.z = Math.sin(t * 40) * 0.9 * Math.sign(w.position.x); }
+    else { p.g.position.y = 0.14; p.g.rotation.x = Math.max(0, Math.sin(t * 3 + p.z)) * 0.4; }   // pecking
+    p.g.position.z = p.z;
+    if (p.z > DECOR_FRONT + 6) resetPigeon(p, p.z - DECOR_SPAN);
+  }
+  for (let i = 0; i < CONF_N; i++) {
+    const c = confData[i];
+    c.y -= c.s * 0.6 * dt; c.x += Math.sin(t + i) * dt * 0.6; c.z += ws * dt; c.r += dt * c.s;
+    if (c.y < 0 || c.z > 10) { c.y = rand(8, 12); c.z = rand(-50, 5); c.x = rand(-11, 11); }
+    _dummy.position.set(c.x, c.y, c.z); _dummy.rotation.set(c.r, c.r * 0.7, 0); _dummy.updateMatrix(); confetti.setMatrixAt(i, _dummy.matrix);
+  }
+  confetti.instanceMatrix.needsUpdate = true;
+  for (const k of kites) { k.rotation.z = Math.sin(t * 1.3 + k.userData.ph) * 0.25; k.position.y += Math.sin(t * 0.8 + k.userData.ph) * dt * 0.4; }
+  if (shock.visible) { shock.userData.t += dt; const s = 0.5 + shock.userData.t * 14; shock.scale.set(s, s, s); shock.material.opacity = Math.max(0, 1 - shock.userData.t / 0.4); if (shock.userData.t > 0.4) shock.visible = false; }
+}
+
+// Menu idle: show the character's concept art (art/*.webp cutouts) standing where the 3D model would be.
+const IDLE_ART = { guddu: 'guddu', dadi: 'dadi-ji', dhol: 'dhol-bro', intern: 'camera-intern', cocky: 'cocky' };
+const idlePic = $('idlePic'), _feet = new THREE.Vector3(), _top = new THREE.Vector3();
+function showIdlePic(id, H) {
+  const name = IDLE_ART[id];
+  if (!name || idlePic.dataset.bad === name) return false;
+  if (idlePic.dataset.name !== name) { idlePic.dataset.name = name; idlePic.onerror = () => { idlePic.dataset.bad = name; idlePic.hidden = true; }; idlePic.src = 'art/' + name + '.webp'; }
+  if (!idlePic.naturalHeight) return idlePic.dataset.bad !== name;   // still loading: keep the 3D model hidden
+  _feet.set(0, 0, 0).project(camera); _top.set(0, H, 0).project(camera);
+  const h = (_top.y - _feet.y) / 2 * innerHeight * 1.1, w = h * idlePic.naturalWidth / idlePic.naturalHeight;
+  const x = (_feet.x + 1) / 2 * innerWidth, y = (1 - _feet.y) / 2 * innerHeight;
+  idlePic.style.width = w + 'px'; idlePic.style.height = h + 'px';
+  idlePic.style.transform = `translate(${x - w / 2}px, ${y - h}px) rotate(${Math.sin(t * 2.4) * 2}deg) scaleY(${1 + Math.abs(Math.sin(t * 2.4)) * 0.02})`;
+  idlePic.hidden = false;
+  return true;
+}
+function updateCharacters(dt) {
+  const r = player.rig, playing = state === 'PLAYING' || state === 'CAUGHT';
+  if (state === 'MENU' && showIdlePic(CHARS[selIdx].id, r.H || 2)) {
+    r.root.visible = false; r.picHidden = true; phone.visible = cape.visible = false;
+    if (r.placard) r.placard.visible = false;
+    return;
+  }
+  idlePic.hidden = true;
+  if (r.picHidden) { r.root.visible = true; r.picHidden = false; }
+  updateCape(r);
+  if (state === 'MENU') {
+    menuIdle += dt; const lazy = menuIdle > 10;   // leave him alone and he lies down to scroll
+    runPhase += dt * 6; animate(r, 'idle', dt, lazy ? 0.04 : 0.6, runPhase);
+    r.root.position.set(0, 0, 0); r.root.scale.setScalar(r.baseScale);
+    if (lazy) {
+      if (!phone.visible) { phone.visible = true; pop('11 HRS/DAY 📱', 0, 1.6, 0, 'teal'); $('hint').textContent = '💡 ' + TIPS[3]; }
+      r.root.rotation.y = 1.1; r.body.rotation.x = -Math.PI / 2; r.body.position.y = 0.3;
+      phone.position.set(-0.6, 0.85, -0.3); phone.rotation.set(-1.2, 1.1, 0);   // held above his face
+    } else { phone.visible = false; r.root.rotation.y += dt * 0.7; }
+    jiggleEyes(r, dt, Math.sin(t * 2) * 0.2, Math.cos(runPhase) * 0.15);
+    return;
+  }
+  phone.visible = false;
+  if (state === 'PLAYING' && introT > 0) {   // doorbell intro: ding the gate, then run
+    animate(r, 'idle', dt, 0.5, runPhase += dt * 6);
+    r.root.position.set(player.x, 0, 0); r.root.rotation.set(0, Math.PI, 0);   // face down the road: GLB idle is a run cycle, so facing the gate looked like running the wrong way
+    if (introT > 0.75 && introT < 1.0) r.body.rotation.x = 0.3;
+    inspector.root.position.set(0, 0, CONFIG.INSPECTOR_FAR_Z + 4);
+    return;
+  }
+  if (playing) {
+    runPhase += dt * (7 + ws * 0.32) * (state === 'CAUGHT' ? 0.4 : 1);
+    const mode = !player.onGround ? 'jump' : player.slideT > 0 ? 'slide' : 'run';
+    animate(r, mode, dt, state === 'CAUGHT' ? 0.4 : clamp(ws / 16, 0.8, 1.8), runPhase);
+    if (r.chappalArm && player.swingT > 0) r.chappalArm.rotation.set(-2.8 + (0.4 - player.swingT) * 6, 0, 0.3);
+    const hover = player.thela ? 0.42 + Math.sin(t * 9) * 0.05 : 0;
+    r.root.position.set(player.x, player.y + hover, 0);
+    const sq = player.landT > 0 ? player.landT / 0.15 : 0;
+    r.root.scale.set(r.baseScale * (1 + sq * 0.18), r.baseScale * (1 - sq * 0.25 + (!player.onGround ? 0.06 : 0)), r.baseScale * (1 + sq * 0.18));
+    const lean = (laneX(player.lane) - player.x) * 0.15;
+    const wobble = player.stumbleT > CONFIG.STUMBLE_RECOVER - 0.8 || state === 'CAUGHT' ? Math.sin(t * 22) * 0.25 : 0;
+    r.root.rotation.set(0, Math.PI, lean + wobble + (player.thela ? Math.sin(t * 7) * 0.08 : 0));
+    r.root.visible = !(player.invulnT > 0 || power.press > 0) || Math.sin(t * 40) > -0.3;   // blink while invulnerable
+    jiggleEyes(r, dt, (player.x - player.prevX) / Math.max(dt, 1e-3) * 0.02, -player.vy * 0.025 + Math.sin(runPhase * 2) * 0.12);
+    cart.visible = player.thela; if (player.thela) { cart.position.set(player.x, player.y + hover - 0.42 + 0.05, 0.05); cart.rotation.set(0, 0, Math.sin(t * 7) * 0.08); }
+    stars.visible = player.stumbleT > CONFIG.STUMBLE_RECOVER - 1.6 || state === 'CAUGHT';
+    if (stars.visible) { stars.position.set(player.x, player.y + (r.H || 2.1 * r.baseScale) + 0.25, 0); stars.rotation.y += dt * 6; }
+    // Inspector: runs behind, waves the clipboard
+    animate(inspector, 'run', dt, state === 'CAUGHT' ? 1.2 : clamp(ws / 16, 0.8, 1.8) * 0.95, runPhase * 0.95 + 1);
+    inspector.root.position.set(inspX, 0, inspZ); inspector.root.rotation.set(0, Math.PI, 0);
+    jiggleEyes(inspector, dt, Math.sin(t * 3) * 0.15, Math.sin(runPhase * 2) * 0.1);
+  }
+}
+
+const _sp = new THREE.Vector3(), _off = new THREE.Vector3();
+function updateCape(r) {
+  const on = save.outfit === 'cape' && r === rigs.guddu && r.glb && r.root.visible;
+  cape.visible = !!on; if (!on) return;
+  r.root.updateMatrixWorld(true);
+  const sp = r.model.getObjectByName('Spine') || r.model; sp.getWorldPosition(_sp);
+  cape.position.copy(_sp).add(_off.set(0, 0.25, -0.28).applyQuaternion(r.root.quaternion));
+  cape.quaternion.copy(r.root.quaternion); cape.rotateX(-0.25 - Math.min(0.9, ws * 0.03) - Math.sin(t * 9) * 0.06);
+}
+function updateCamera(dt) {
+  if (state === 'MENU') {
+    const shift = camera.aspect > 1.2 ? -1.5 : 0;   // landscape: push the character to the right of the menu column
+    camera.position.set(shift + Math.sin(t * 0.25) * 0.6, 1.9, 5.6); camera.lookAt(shift, 0.85, 0);
+    if (camera.fov !== baseFov) { camera.fov = baseFov; camera.updateProjectionMatrix(); }
+  } else {
+    const dip = player.slideT > 0 ? -0.6 : 0;
+    camera.position.x = damp(camera.position.x, player.x * 0.55, 8, dt);
+    camera.position.y = damp(camera.position.y, camUp + player.y * 0.35 + dip, 6, dt);
+    camera.position.z = damp(camera.position.z, camBack, 6, dt);
+    camera.lookAt(player.x * 0.4, 1.2 + player.y * 0.3, -10);
+    const fov = baseFov + (power.chai > 0 && state === 'PLAYING' ? 12 : 0);
+    if (Math.abs(camera.fov - fov) > 0.05) { camera.fov = damp(camera.fov, fov, 5, dt); camera.updateProjectionMatrix(); }
+    if (shakeT > 0) { shakeT -= dt; const a = shakeT * 0.9; camera.position.x += rand(-a, a); camera.position.y += rand(-a, a); }
+  }
+  sun.position.set(camera.position.x - 6, 14, 6); sun.target.position.set(camera.position.x, 0, -2);
+  skyline.position.x = camera.position.x * 0.9;
+}
+
+function update(dt) {
+  t += dt;
+  if (state === 'PLAYING') updatePlaying(dt);
+  else if (state === 'CAUGHT') {
+    caughtT += dt; caughtSpeed *= Math.exp(-4 * dt); ws = caughtSpeed;
+    inspZ = damp(inspZ, 1.3, 4, dt); inspX = damp(inspX, player.x, 6, dt);
+    if (Math.random() < dt * 14) burst(player.x, 1.8, 0.8, 1, ['#ffffff', '#f2ecf7'], { speed: 3, up: 3, size: 0.25, life: 1, grav: 3, world: 0 });
+    if (caughtT > 1.4) gameOver();
+  } else ws = 0;
+  updateEntities(dt);
+  updateWorld(dt);
+  updateCharacters(dt);
+  updateCamera(dt);
+}
+
+/* =====================================================================
+   Menu UI
+   ===================================================================== */
+function refreshMenu() {
+  const c = CHARS[selIdx], cost = CONFIG.UNLOCK_COST[c.id], unlocked = isUnlocked();
+  $('cName').textContent = (unlocked ? '' : '🔒 ') + c.name;
+  $('cAbility').textContent = c.ability;
+  $('dots').innerHTML = CHARS.map((_, i) => `<i class="${i === selIdx ? 'on' : ''}">●</i>`).join('');
+  const b = $('btnPlay');
+  if (unlocked) { b.textContent = 'PLAY ▶'; b.disabled = false; b.className = 'btn'; }
+  else if (save.totalCoins >= cost) { b.textContent = `UNLOCK · ₹ ${cost}`; b.disabled = false; b.className = 'btn gold'; }
+  else { b.textContent = `🔒 ₹ ${cost} (need ${cost - save.totalCoins})`; b.disabled = true; b.className = 'btn gold'; }
+  $('mBest').textContent = save.best.toLocaleString(); $('mCoins').textContent = '₹ ' + save.totalCoins;
+  $('achCount').textContent = ACH.filter(a => save.ach[a.id]).length + '/' + ACH.length;
+  $('mute').textContent = save.muted ? '🔇' : '🔊';
+  $('hint').textContent = isTouch ? 'Swipe ← → to switch lanes, ↑ to jump, ↓ to slide' : '← → / A D lanes · ↑ W jump · ↓ S slide · Space start · P pause';
+}
+function openPanel(id) { $(id).classList.remove('hidden'); }
+function renderAch() {
+  $('achList').innerHTML = ACH.map(a => { const [h, n] = a.prog(), done = !!save.ach[a.id];
+    return `<div class="it ${done ? '' : 'off'}"><span class="em">${done ? a.e : '🔒'}</span><div><b>${a.name}</b><small>${a.desc}${done ? ' ✓' : ` (${Math.min(h, n)}/${n})`}</small></div></div>`; }).join('');
+}
+function renderGrwm() {
+  $('grwmList').innerHTML = OUTFITS.map(o => { const own = save.outfits.includes(o.id), on = save.outfit === o.id;
+    const act = on ? '<span class="chip">WEARING</span>' : own ? `<button class="btn alt" data-wear="${o.id}">WEAR</button>` : `<button class="btn gold" data-buy="${o.id}" ${save.totalCoins < o.cost ? 'disabled' : ''}>₹ ${o.cost}</button>`;
+    return `<div class="it"><span class="em">${o.e}</span><div><b>${o.name}</b><small>${o.desc}</small></div><div class="act">${act}</div></div>`; }).join('') +
+    (rigs.guddu.glb ? '' : '<p class="sub">Outfits need the Higgsfield Guddu model.</p>');
+}
+$('btnAch').onclick = () => { renderAch(); openPanel('achPanel'); };
+$('btnGrwm').onclick = () => { renderGrwm(); openPanel('grwmPanel'); selectChar(0); };
+document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => b.closest('.panel').classList.add('hidden'));
+$('grwmList').onclick = e => {
+  const buy = e.target.dataset.buy, wear = e.target.dataset.wear || buy;
+  if (buy) { const o = OUTFITS.find(x => x.id === buy); if (save.totalCoins < o.cost) return; save.totalCoins -= o.cost; save.outfits.push(buy); SFX.power(); }
+  if (wear) { save.outfit = wear; persist(); applyOutfit(); renderGrwm(); refreshMenu(); }
+};
+$('btnRevive').onclick = revive;
+function playOrUnlock() {
+  const c = CHARS[selIdx];
+  if (isUnlocked()) return startGame();
+  const cost = CONFIG.UNLOCK_COST[c.id];
+  if (save.totalCoins >= cost) {
+    save.totalCoins -= cost; save.unlocked.push(c.id); save.selected = c.id; persist();
+    pop('TADAA!', 0, 2.2, 0, 'pink'); SFX.power(); burst(0, 1.5, 0, 24, [COL.pink, COL.teal, COL.marigold], { speed: 4, up: 5, size: 0.14, life: 1 });
+    refreshMenu();
+  }
+}
+$('prev').onclick = () => selectChar(selIdx - 1);
+$('next').onclick = () => selectChar(selIdx + 1);
+$('btnPlay').onclick = playOrUnlock;
+$('btnRestart').onclick = startGame;
+$('btnMenu').onclick = goMenu;
+$('btnPause').onclick = pauseGame;
+$('btnResume').onclick = resumeGame;
+$('btnQuit').onclick = goMenu;
+$('mute').onclick = () => { save.muted = !save.muted; persist(); refreshMenu(); };
+
+/* =====================================================================
+   Input: keyboard + swipes
+   ===================================================================== */
+addEventListener('keydown', e => {
+  const k = e.key;
+  if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', ' '].includes(k)) e.preventDefault();
+  if (actx && actx.state === 'suspended') actx.resume();
+  menuIdle = 0;
+  if (e.repeat && k !== ' ') return;
+  if (state === 'MENU') {
+    if (k === ' ' || k === 'Enter') playOrUnlock();
+    else if (k === 'ArrowLeft' || k === 'a' || k === 'A') selectChar(selIdx - 1);
+    else if (k === 'ArrowRight' || k === 'd' || k === 'D') selectChar(selIdx + 1);
+    return;
+  }
+  if (state === 'GAMEOVER') { if (k === ' ' || k === 'Enter') startGame(); else if (k === 'r' || k === 'R') revive(); else if (k === 'Escape') goMenu(); return; }
+  if (state === 'PAUSED') { if (k === 'p' || k === 'P' || k === 'Escape' || k === ' ') resumeGame(); return; }
+  if (state !== 'PLAYING') return;
+  if (k === 'ArrowLeft' || k === 'a' || k === 'A') moveLane(-1);
+  else if (k === 'ArrowRight' || k === 'd' || k === 'D') moveLane(1);
+  else if (k === 'ArrowUp' || k === 'w' || k === 'W' || k === ' ') jump();
+  else if (k === 'ArrowDown' || k === 's' || k === 'S') slide();
+  else if (k === 'p' || k === 'P' || k === 'Escape') pauseGame();
+});
+let touch = null;
+const _ray = new THREE.Raycaster(), _ndc = new THREE.Vector2();
+canvas.addEventListener('pointerdown', e => {   // tap the little brown visitor
+  menuIdle = 0;
+  if (state !== 'PLAYING' || !roach.active) return;
+  _ndc.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1); _ray.setFromCamera(_ndc, camera);
+  if (_ray.intersectObject(roach.hit).length) catchRoach();
+});
+addEventListener('touchstart', e => {
+  if (actx && actx.state === 'suspended') actx.resume();
+  if (e.target.closest('button')) return;
+  const p = e.changedTouches[0]; touch = { x: p.clientX, y: p.clientY, done: false };
+}, { passive: true });
+addEventListener('touchmove', e => {
+  if (state === 'PLAYING') e.preventDefault();
+  if (!touch || touch.done) return;
+  const p = e.changedTouches[0], dx = p.clientX - touch.x, dy = p.clientY - touch.y;
+  if (Math.hypot(dx, dy) < 30) return;
+  touch.done = true;                       // one action per swipe; act mid-swipe for snappy controls
+  if (Math.abs(dx) > Math.abs(dy)) moveLane(dx > 0 ? 1 : -1); else if (dy < 0) jump(); else slide();
+}, { passive: false });
+addEventListener('touchend', () => { touch = null; });
+document.addEventListener('visibilitychange', () => { if (document.hidden) pauseGame(); });
+
+/* =====================================================================
+   Resize + main loop
+   ===================================================================== */
+function resize() {
+  const w = innerWidth, h = innerHeight, portrait = w / h < 0.85;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h; baseFov = portrait ? 70 : 60; camBack = portrait ? 9.5 : 7.5; camUp = portrait ? 5.4 : 4.5;
+  camera.fov = baseFov; camera.updateProjectionMatrix();
+}
+addEventListener('resize', resize);
+resize();
+
+// Pre-warm pools + compile shaders up front so the first spawns don't stutter
+{
+  const tmp = [];
+  for (const [type, n] of [['barricade', 8], ['sign', 8], ['pothole', 8], ['convoy', 2], ['coin', 60], ['power', 4], ['particle', 160]])
+    for (let i = 0; i < n; i++) { const it = pools[type].get(); it.obj.position.set(0, -50, -60); tmp.push([type, it]); }
+  cart.visible = stars.visible = shock.visible = strip.visible = true;
+  renderer.compile(scene, camera);
+  for (const [type, it] of tmp) pools[type].release(it);
+  cart.visible = stars.visible = shock.visible = strip.visible = false;
+}
+
+selectChar(selIdx);
+applyOutfit();
+inspector.root.visible = false;
+show('menu');
+$('loading').remove();
+
+const stats = { frames: 0, ms: 0 };
+let last = performance.now();
+function frame(now) {
+  requestAnimationFrame(frame);
+  const raw = (now - last) / 1000; last = now;
+  const dt = Math.min(raw, 1 / 30);           // clamp so a hitch never teleports the player
+  if (state !== 'PAUSED') update(dt);
+  renderer.render(scene, camera);
+  stats.frames++; stats.ms += raw * 1000;
+}
+requestAnimationFrame(frame);
+
+// Small debug handle (handy for tuning in the console): MR.stats, MR.state
+window.MR = { THREE, GLB, revive, catchRoach, roach, get introT() { return introT; }, set nextBijli(v) { nextBijli = v; }, get bijliT() { return bijliT; }, applyOutfit, get state() { return state; }, stats, pools, step(n = 60, dt = 1 / 60) { for (let i = 0; i < n; i++) if (state !== 'PAUSED') update(dt); renderer.render(scene, camera); }, input: { moveLane, jump, slide }, spawnObstacle, activatePower, clear: () => { for (const p of allPools) p.releaseAll(); spawnZ = -125; }, player, power, get coins() { return coinsRun; }, get score() { return score(); }, save, startGame, goMenu, get dist() { return dist; }, set speed(v) { speed = v; }, forceHit: () => hit({ type: 'barricade', hit: false, dead: false, lane: 0, obj: { position: new THREE.Vector3() } }), renderer };
+</script>
+<script>
+// If the module never boots (offline: Three.js comes from a CDN), say so instead of showing a blank screen.
+setTimeout(function () {
+  if (!window.__mrBooted) {
+    var n = document.getElementById('nogl');
+    n.querySelector('.quip').textContent = 'Could not load the 3D engine. Morcha Rush loads Three.js from the internet the first time, so check your connection and reload.';
+    n.classList.remove('hidden');
+  }
+}, 8000);
+</script>
+</body>
+</html>

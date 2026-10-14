@@ -1,0 +1,8 @@
+concepts/
+models/
+tools/
+.claude/
+*.md
+.env*
+screenshots/
+brand/logo.png
