@@ -51,7 +51,7 @@ On your heels: 👮 **Daroga Ji** *(CHALO THANE!)*. Still waiting for your Form 
 | 🛺 | Jugaad Thela | Ride a cart that absorbs one crash |
 | 🍽️ | Steel Thali | Thali Dadi's, borrowed. A clatter that stuns Daroga Ji |
 
-There are also random **Bijli Gayi** power cuts, onion carts that make you cry, achievements, Guddu outfits (GRWM), and a little brown visitor worth catching.
+There are also random **Bijli Gayi** power cuts, onion carts that make you cry, achievements, and a little brown visitor worth catching.
 
 ## Controls
 

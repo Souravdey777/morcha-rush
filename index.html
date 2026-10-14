@@ -190,7 +190,7 @@ h2{font-size:clamp(40px,11vw,64px);color:var(--pink);-webkit-text-stroke:2px var
         <button class="arrow" id="next" aria-label="Next character">▶</button>
       </div>
       <div class="dots" id="dots"></div>
-      <div class="row mini"><button class="chip" id="btnAch">🏆 <span id="achCount">0/5</span></button><button class="chip" id="btnGrwm">👕 GRWM</button><button class="chip" id="btnHelp">❓ HOW TO PLAY</button></div>
+      <div class="row mini"><button class="chip" id="btnAch">🏆 <span id="achCount">0/5</span></button><button class="chip" id="btnHelp">❓ HOW TO PLAY</button></div>
       <button class="btn" id="btnPlay">PLAY ▶</button>
       <div class="stats">Best <b id="mBest">0</b> · Wallet <b id="mCoins">₹ 0</b></div>
       <p class="hint" id="hint"></p>
@@ -253,8 +253,6 @@ h2{font-size:clamp(40px,11vw,64px);color:var(--pink);-webkit-text-stroke:2px var
   <div id="helpPanel" class="panel hidden" style="justify-content:center;background:rgba(42,27,61,.35)">
     <div class="card"><h2 style="font-size:34px">HOW TO PLAY</h2><div class="list"><h3>The run</h3><div class="it"><span class="em">🏃</span><div><b>Run the march</b><small>Ring the gate bell and BHAAG! Switch lanes, jump and slide. Collect ₹ coins to unlock new runners.</small></div></div><div class="it"><span class="em">🚨</span><div><b>Daroga Ji</b><small>Crash once and you stumble: he closes in for a few seconds. Crash again before you recover and he catches you. Caught? Pay him ₹500 from your wallet to carry on, once per run.</small></div></div><div class="it"><span class="em">⌨️</span><div><b>Controls</b><small>Desktop: ← → or A D to switch lanes, ↑ / W to jump, ↓ / S to slide, P to pause. Phone: swipe left, right, up or down.</small></div></div><h3>Obstacles</h3><div class="it"><span class="em">🚧</span><div><b>Barricade</b><small>"Adjusting, please wait." Jump over it.</small></div></div><div class="it"><span class="em">🚫</span><div><b>Section 144 sign</b><small>Slide under it.</small></div></div><div class="it"><span class="em">🕳️</span><div><b>Pothole</b><small>The road budget went somewhere. Jump over it.</small></div></div><div class="it"><span class="em">🧅</span><div><b>Onion cart</b><small>Jump over it. Hit one and you will be in tears.</small></div></div><div class="it"><span class="em">🚓</span><div><b>VIP convoy</b><small>Route diverted. Too big to jump: switch lanes.</small></div></div><div class="it"><span class="em">🚉</span><div><b>Station closed</b><small>Inconvenience regretted. Too tall to jump, no gap to slide: switch lanes.</small></div></div><h3>Power-ups</h3><div class="it"><span class="em">☕</span><div><b>Cutting Chai</b><small>5 seconds of extra speed. You smash through anything in your way.</small></div></div><div class="it"><span class="em">🥁</span><div><b>Dhol Beat</b><small>6 seconds of smashing straight through barricades.</small></div></div><div class="it"><span class="em">📸</span><div><b>Press Pass</b><small>4 seconds of invincibility. EXPOSED!</small></div></div><div class="it"><span class="em">🛺</span><div><b>Jugaad Thela</b><small>Ride a cart that takes one crash for you.</small></div></div><div class="it"><span class="em">🍽️</span><div><b>Steel Thali</b><small>Thali Dadi's, borrowed. The clatter stuns Daroga Ji for 3 seconds, and gets you out of a stumble.</small></div></div><h3>Watch out for</h3><div class="it"><span class="em">📘</span><div><b>Required Reading</b><small>A rare book worth +50 coins.</small></div></div><div class="it"><span class="em">🍔</span><div><b>Shiny burger</b><small>Looks like a power-up. It is a trap: bad optics slow you down for 2 seconds.</small></div></div><div class="it"><span class="em">⚡</span><div><b>Bijli Gayi</b><small>Random power cuts plunge the street into darkness for 5 to 15 seconds.</small></div></div><div class="it"><span class="em">🪳</span><div><b>The little brown visitor</b><small>Shows up once a run. Tap it for a bonus and an achievement.</small></div></div></div><button class="btn alt" data-close>GOT IT</button></div>
   </div>
-  <div id="grwmPanel" class="panel hidden" style="justify-content:center;background:rgba(42,27,61,.35)">
-    <div class="card"><h2 style="font-size:40px">GRWM</h2><p class="sub">Get ready with Guddu. Waterproof kajal: lasts longer than most things in Delhi.</p><div class="list" id="grwmList"></div><button class="btn alt" data-close>DONE</button></div>
   </div>
 
   <div id="loading" class="panel" style="justify-content:center;background:#ffc9a3;pointer-events:auto"><div class="card"><h2 style="font-size:36px">CHALO!</h2><p class="quip" id="loadMsg">Loading the march against corruption…</p><p class="sub" id="loadTip"></p></div></div>
@@ -364,20 +362,14 @@ const ACH = [   // id, emoji, name, description, progress(stat) → [have, need]
   { id: 'handle', e: '💸', name: 'Setting Ho Gayi', desc: 'Bribe Daroga Ji 10 times.', prog: () => [save.stats.revives, 10] },
   { id: 'online', e: '🛋️', name: 'Chronically Online', desc: 'Play 11 hours in total.', prog: () => [Math.floor(save.stats.playSec / 3600), 11] },
 ];
-const OUTFITS = [   // Guddu's GRWM wardrobe
-  { id: 'classic', e: '💙', name: 'Classic Hoodie', desc: 'The one he slept in.', cost: 0 },
-  { id: 'mitti', e: '🟤', name: 'Mitti Brown Hoodie', desc: 'Earth brown. Just a colour. Totally.', cost: 300 },
-  { id: 'cape', e: '🦸', name: 'Gamchha Cape', desc: 'A red-checked towel, tied with conviction.', cost: 400 },
-];
 
 /* ---------- Save data (localStorage may be blocked: never trust it) ---------- */
 const SAVE_KEY = 'morchaRush.v1';
 const save = { best:0, bestDist:0, totalCoins:0, unlocked:['guddu'], selected:'guddu', muted:false,
-  stats: { escapes:0, runs:0, revives:0, playSec:0 }, ach: {}, outfits: ['classic'], outfit: 'classic' };
+  stats: { escapes:0, runs:0, revives:0, playSec:0 }, ach: {} };
 try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); if (s && typeof s === 'object') Object.assign(save, s); } catch (e) {}
 if (!Array.isArray(save.unlocked)) save.unlocked = ['guddu'];
 save.stats = Object.assign({ escapes:0, runs:0, revives:0, playSec:0 }, save.stats); save.ach ||= {};
-if (!Array.isArray(save.outfits)) save.outfits = ['classic']; save.outfit ||= 'classic';
 try { document.getElementById('loadTip').textContent = '💡 ' + TIPS[(Math.random() * TIPS.length) | 0]; } catch (e) {}
 if (!CHARS.some(c => c.id === save.selected)) save.selected = 'guddu';
 function persist() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} }
@@ -524,7 +516,6 @@ const TEX = {
   route: signTex(['« ROUTE DIVERTED »'], { bg: COL.saffron, border: COL.plum, font: 70, w: 768, h: 200 }),
   press: signTex(['PRESS'], { border: COL.pink, font: 90, w: 256, h: 160 }),
   station: signTex(['STATION CLOSED', 'INCONVENIENCE REGRETTED'], { bg: '#1d1630', fg: COL.cream, border: COL.saffron, font: 64, w: 768, h: 230 }),
-  check: canvasTex(128, 128, (g, w) => { g.fillStyle = '#d8323a'; g.fillRect(0, 0, w, w); g.fillStyle = 'rgba(255,248,236,.85)'; for (let i = 0; i < 8; i += 2) { g.fillRect(i * 16, 0, 16, w); g.fillRect(0, i * 16, w, 16); } g.fillStyle = 'rgba(42,27,61,.35)'; for (let i = 1; i < 8; i += 2) g.fillRect(i * 16, i * 16, 16, 16); }),
   wip: canvasTex(320, 220, (g, w, h) => {             // pink pennant flag
     g.fillStyle = COL.pink; g.beginPath(); g.moveTo(0, 0); g.lineTo(w, h * 0.5); g.lineTo(0, h); g.closePath(); g.fill();
     g.fillStyle = '#fff'; g.textBaseline = 'middle'; g.font = `900 34px ${FONT}`;
@@ -1211,7 +1202,7 @@ for (let i = 0; i < CONF_N; i++) {
 confetti.frustumCulled = false; scene.add(confetti);
 
 /* =====================================================================
-   Meme Bible set pieces: doorbell gate, the little brown visitor, phone, cape
+   Meme Bible set pieces: doorbell gate, the little brown visitor, phone
    ===================================================================== */
 const gate = new THREE.Group();   // generic big gate with a doorbell: every run starts with a Ding-Dong-Ditch
 {
@@ -1235,27 +1226,6 @@ const roach = { obj: new THREE.Group(), active: false, done: false, at: 0, dir: 
 }
 const phone = new THREE.Group();   // for the 'chronically online' idle
 phone.add(M(G.box, '#1a1024', 0, 0, 0, 0.16, 0.3, 0.025), M(G.box, basicMat('#7fd6ff'), 0, 0.005, 0.014, 0.13, 0.25, 0.005)); phone.visible = false; scene.add(phone);
-const cape = new THREE.Group();    // Gamchha Cape: follows Guddu's upper spine
-{ const m = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 1.15, 1, 4), new THREE.MeshLambertMaterial({ map: TEX.check, side: THREE.DoubleSide })); m.position.y = -0.55; cape.add(m); cape.visible = false; scene.add(cape); }
-const brownHoodie = {};            // Mitti Brown: recolour Guddu's blue hoodie pixels in his texture
-function applyOutfit() {
-  const r = rigs.guddu; if (!r.glb) return;
-  let mesh = null; r.model.traverse(o => { if (o.isSkinnedMesh && !mesh) mesh = o; });
-  if (!mesh || !mesh.material.map) return;
-  brownHoodie.orig ||= mesh.material.map;
-  if (save.outfit === 'mitti' && !brownHoodie.tex) {
-    const img = brownHoodie.orig.image, c = document.createElement('canvas'); c.width = img.width; c.height = img.height;
-    const g = c.getContext('2d'); g.drawImage(img, 0, 0); const d = g.getImageData(0, 0, c.width, c.height), a = d.data;
-    for (let i = 0; i < a.length; i += 4) {
-      const R = a[i], Gc = a[i + 1], B = a[i + 2];
-      if (B > R + 40 && B > Gc + 15) { const L = Math.min(1.3, (0.3 * R + 0.59 * Gc + 0.11 * B) / 120); a[i] = 150 * L; a[i + 1] = 98 * L; a[i + 2] = 62 * L; }
-    }
-    g.putImageData(d, 0, 0);
-    const t2 = new THREE.CanvasTexture(c); t2.flipY = brownHoodie.orig.flipY; t2.colorSpace = brownHoodie.orig.colorSpace; t2.wrapS = brownHoodie.orig.wrapS; t2.wrapT = brownHoodie.orig.wrapT;
-    brownHoodie.tex = t2;
-  }
-  mesh.material.map = save.outfit === 'mitti' ? brownHoodie.tex : brownHoodie.orig; mesh.material.needsUpdate = true;
-}
 
 /* =====================================================================
    Comic text pops, screen flash, sound blips
@@ -1820,13 +1790,12 @@ function updateCharacters(dt) {
   shoutT -= dt;
   const r = player.rig, playing = state === 'PLAYING' || state === 'CAUGHT';
   if (state === 'MENU' && showIdlePic(CHARS[selIdx].id, r.H || 2)) {
-    r.root.visible = false; r.picHidden = true; phone.visible = cape.visible = false;
+    r.root.visible = false; r.picHidden = true; phone.visible = false;
     if (r.placard) r.placard.visible = false;
     return;
   }
   idlePic.hidden = shoutEl.hidden = true;
   if (r.picHidden) { r.root.visible = true; r.picHidden = false; }
-  updateCape(r);
   if (state === 'MENU') {
     menuIdle += dt; const lazy = menuIdle > 10;   // leave him alone and he lies down to scroll
     runPhase += dt * 6; animate(r, 'idle', dt, lazy ? 0.04 : 0.6, runPhase);
@@ -1872,14 +1841,6 @@ function updateCharacters(dt) {
 }
 
 const _sp = new THREE.Vector3(), _off = new THREE.Vector3();
-function updateCape(r) {
-  const on = save.outfit === 'cape' && r === rigs.guddu && r.glb && r.root.visible;
-  cape.visible = !!on; if (!on) return;
-  r.root.updateMatrixWorld(true);
-  const sp = r.model.getObjectByName('Spine') || r.model; sp.getWorldPosition(_sp);
-  cape.position.copy(_sp).add(_off.set(0, 0.25, -0.28).applyQuaternion(r.root.quaternion));
-  cape.quaternion.copy(r.root.quaternion); cape.rotateX(-0.25 - Math.min(0.9, ws * 0.03) - Math.sin(t * 9) * 0.06);
-}
 function updateCamera(dt) {
   if (state === 'MENU') {
     const shift = camera.aspect > 1.2 ? -1.5 : 0;   // landscape: push the character to the right of the menu column
@@ -1937,21 +1898,9 @@ function renderAch() {
   $('achList').innerHTML = ACH.map(a => { const [h, n] = a.prog(), done = !!save.ach[a.id];
     return `<div class="it ${done ? '' : 'off'}"><span class="em">${done ? a.e : '🔒'}</span><div><b>${a.name}</b><small>${a.desc}${done ? ' ✓' : ` (${Math.min(h, n)}/${n})`}</small></div></div>`; }).join('');
 }
-function renderGrwm() {
-  $('grwmList').innerHTML = OUTFITS.map(o => { const own = save.outfits.includes(o.id), on = save.outfit === o.id;
-    const act = on ? '<span class="chip">WEARING</span>' : own ? `<button class="btn alt" data-wear="${o.id}">WEAR</button>` : `<button class="btn gold" data-buy="${o.id}" ${save.totalCoins < o.cost ? 'disabled' : ''}>₹ ${o.cost}</button>`;
-    return `<div class="it"><span class="em">${o.e}</span><div><b>${o.name}</b><small>${o.desc}</small></div><div class="act">${act}</div></div>`; }).join('') +
-    (rigs.guddu.glb ? '' : '<p class="sub">Outfits need the Higgsfield Guddu model.</p>');
-}
 $('btnAch').onclick = () => { renderAch(); openPanel('achPanel'); };
-$('btnGrwm').onclick = () => { renderGrwm(); openPanel('grwmPanel'); selectChar(0); };
 $('btnHelp').onclick = () => openPanel('helpPanel');
 document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => b.closest('.panel').classList.add('hidden'));
-$('grwmList').onclick = e => {
-  const buy = e.target.dataset.buy, wear = e.target.dataset.wear || buy;
-  if (buy) { const o = OUTFITS.find(x => x.id === buy); if (save.totalCoins < o.cost) return; save.totalCoins -= o.cost; save.outfits.push(buy); SFX.power(); }
-  if (wear) { save.outfit = wear; persist(); applyOutfit(); renderGrwm(); refreshMenu(); }
-};
 $('btnRevive').onclick = revive;
 function playOrUnlock() {
   const c = CHARS[selIdx];
@@ -2047,7 +1996,6 @@ function prewarm() {
 prewarm();
 
 selectChar(selIdx);
-applyOutfit();
 inspector.root.visible = false;
 show('menu');
 $('loading').remove();
@@ -2064,7 +2012,7 @@ gameLoaded.then(() => {
   if (GLB['powerup-jugaad-thela']) { cart.remove(cart.children[0]); const m = GLB['powerup-jugaad-thela'].scene.clone(true); m.scale.setScalar(1.35); cart.add(m); }
   for (const type of [...Object.keys(OB), 'power']) { for (const it of pools[type].items) scene.remove(it.obj); pools[type].items.length = 0; }   // drop the stand-in obstacles
   prewarm(); modelsReady = true;
-  selectChar(selIdx); applyOutfit();
+  selectChar(selIdx);
   if (pendingStart) startGame();
 });
 
@@ -2081,7 +2029,7 @@ function frame(now) {
 requestAnimationFrame(frame);
 
 // Small debug handle (handy for tuning in the console): MR.stats, MR.state
-window.MR = { THREE, GLB, revive, catchRoach, roach, get introT() { return introT; }, set nextBijli(v) { nextBijli = v; }, get bijliT() { return bijliT; }, applyOutfit, get state() { return state; }, stats, pools, step(n = 60, dt = 1 / 60) { for (let i = 0; i < n; i++) if (state !== 'PAUSED') update(dt); renderer.render(scene, camera); }, input: { moveLane, jump, slide }, spawnObstacle, activatePower, clear: () => { for (const p of allPools) p.releaseAll(); spawnZ = -125; }, player, power, get coins() { return coinsRun; }, get score() { return score(); }, save, startGame, goMenu, get dist() { return dist; }, set speed(v) { speed = v; }, forceHit: () => hit({ type: 'barricade', def: OB.barricade, hit: false, dead: false, lane: 0, obj: { position: new THREE.Vector3() } }), renderer };
+window.MR = { THREE, GLB, revive, catchRoach, roach, get introT() { return introT; }, set nextBijli(v) { nextBijli = v; }, get bijliT() { return bijliT; }, get state() { return state; }, stats, pools, step(n = 60, dt = 1 / 60) { for (let i = 0; i < n; i++) if (state !== 'PAUSED') update(dt); renderer.render(scene, camera); }, input: { moveLane, jump, slide }, spawnObstacle, activatePower, clear: () => { for (const p of allPools) p.releaseAll(); spawnZ = -125; }, player, power, get coins() { return coinsRun; }, get score() { return score(); }, save, startGame, goMenu, get dist() { return dist; }, set speed(v) { speed = v; }, forceHit: () => hit({ type: 'barricade', def: OB.barricade, hit: false, dead: false, lane: 0, obj: { position: new THREE.Vector3() } }), renderer };
 </script>
 <script>
 // If the module never boots (offline: Three.js comes from a CDN), say so instead of showing a blank screen.
