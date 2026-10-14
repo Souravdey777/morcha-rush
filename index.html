@@ -1261,42 +1261,56 @@ const DECOR_GLB = {
 const WALKERS = [
   { name: 'pedestrian-shopper', fwd: '-x', size: 1.85, speed: 1.3, bob: 0.05, rate: 6.5 },   // rate: strides match speed so feet don't skate
   { name: 'pedestrian-office-goer', fwd: '+x', size: 1.85, speed: 1.5, bob: 0.05, rate: 7.2 },
-  { name: 'street-dog', fwd: '-z', size: 1.0, speed: 2.4, bob: 0.1, rate: 12 },
+  { name: 'street-dog', fwd: '-z', size: 1.0, speed: 1.8, bob: 0.06, rate: 13 },
 ];
 function glbClone(name, size) {
   const m = GLB[name].scene.clone(true), d = new THREE.Box3().setFromObject(m).getSize(new THREE.Vector3());
   m.scale.setScalar(size / Math.max(d.x, d.y, d.z)); return m;
 }
-// The pedestrian models are unrigged statues frozen mid-stride, feet apart along their facing axis. Skin them to two hip
-// bones so the legs swing: weight ramps in from hip to knee, front/back split by which side of the hip a vertex sits.
-// Legs are what's joined to the feet below the hip: the hand-held bags are separate mesh islands, so they stay put.
+// The pavement walkers are unrigged statues frozen mid-stride. Skin their legs to hip bones so they swing.
+// People: the legs are what's joined to the feet below the hip (hand-held bags are separate mesh islands, so they stay put);
+// weight ramps in from hip to knee, split front/back by which side of the hip a vertex sits, feet apart along their facing axis.
+// Dog: below the belly each limb is its own mesh piece; each swings from where it meets the body, diagonal pairs together.
 const legGeo = {}, ss = THREE.MathUtils.smoothstep;
 function legRig(name, m, fwd) {
   let mesh; m.traverse(o => { if (o.isMesh && !mesh) mesh = o; }); if (!mesh) return null;
-  const fs = fwd === '-x' ? -1 : 1, L = legGeo[name] ||= (() => {
+  const L = legGeo[name] ||= (() => {
     const g = mesh.geometry.clone(), p = g.attributes.position, n = p.count, ia = g.index.array, bb = new THREE.Box3().setFromBufferAttribute(p);
-    const H = bb.max.y - bb.min.y, hip = bb.min.y + H * 0.45, knee = bb.min.y + H * 0.25, foot = bb.min.y + H * 0.03;
-    const ids = new Map(), weld = new Int32Array(n);   // UV seams split vertices: weld by position before walking the mesh
-    for (let i = 0; i < n; i++) { const k = p.getX(i).toFixed(4) + ',' + p.getY(i).toFixed(4) + ',' + p.getZ(i).toFixed(4); if (!ids.has(k)) ids.set(k, ids.size); weld[i] = ids.get(k); }
-    const adj = Array.from({ length: ids.size }, () => []), yOf = new Float32Array(ids.size), leg = new Uint8Array(ids.size), st = [];
-    for (let i = 0; i < n; i++) yOf[weld[i]] = p.getY(i);
+    const H = bb.max.y - bb.min.y, foot = bb.min.y + H * 0.03, ids = new Map(), weld = new Int32Array(n);
+    for (let i = 0; i < n; i++) { const k = p.getX(i).toFixed(4) + ',' + p.getY(i).toFixed(4) + ',' + p.getZ(i).toFixed(4); if (!ids.has(k)) ids.set(k, ids.size); weld[i] = ids.get(k); }   // UV seams split vertices: weld by position before walking the mesh
+    const N = ids.size, adj = Array.from({ length: N }, () => []), P = new Float32Array(N * 3);
+    for (let i = 0; i < n; i++) P.set([p.getX(i), p.getY(i), p.getZ(i)], weld[i] * 3);
     for (let t = 0; t < ia.length; t += 3) for (let a = 0; a < 3; a++) adj[weld[ia[t + a]]].push(weld[ia[t + (a + 1) % 3]], weld[ia[t + (a + 2) % 3]]);
-    for (let v = 0; v < ids.size; v++) if (yOf[v] < foot) { leg[v] = 1; st.push(v); }
-    while (st.length) for (const u of adj[st.pop()]) if (!leg[u] && yOf[u] < hip) { leg[u] = 1; st.push(u); }
+    const lab = new Int32Array(N).fill(-1), flood = (v, top, l) => { const st = [v], out = [v]; lab[v] = l; while (st.length) for (const u of adj[st.pop()]) if (lab[u] < 0 && P[u * 3 + 1] < top) { lab[u] = l; st.push(u); out.push(u); } return out; };
+    const si = new Uint16Array(n * 4), sw = new Float32Array(n * 4), bones = [], done = axis => {
+      g.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(si, 4)); g.setAttribute('skinWeight', new THREE.Float32BufferAttribute(sw, 4)); return { g, bones, axis };
+    };
+    if (fwd === '-z') {
+      const top = bb.min.y + H * 0.3, below = top - H * 0.1;
+      for (let v = 0; v < N; v++) if (lab[v] < 0 && P[v * 3 + 1] < top) {
+        const limb = flood(v, top, bones.length), avg = list => { const c = [0, 0, 0]; for (const u of list) for (let a = 0; a < 3; a++) c[a] += P[u * 3 + a] / list.length; return c; };
+        if (limb.length < 30) { for (const u of limb) lab[u] = N; continue; }   // stray flecks of fur
+        const lo = Math.min(...limb.map(u => P[u * 3 + 1])), [px, , pz] = avg(limb.filter(u => P[u * 3 + 1] > top - H * 0.04)), [, fy, fz] = avg(limb.filter(u => P[u * 3 + 1] < lo + H * 0.04));
+        bones.push({ at: [px, top, pz], amp: 0.5, lp: (px < 0 ? 0 : Math.PI) + (pz < 0 ? 0 : Math.PI), rest: Math.atan2(pz - fz, top - fy) });
+      }
+      for (let i = 0; i < n; i++) { const l = lab[weld[i]], w = l < bones.length && l >= 0 ? ss(-p.getY(i), -top, -below) : 0; si.set([0, w ? l + 1 : 0, 0, 0], i * 4); sw.set([1 - w, w, 0, 0], i * 4); }
+      return done('x');
+    }
+    const fs = fwd === '-x' ? -1 : 1, hip = bb.min.y + H * 0.45, knee = bb.min.y + H * 0.25;
+    for (let v = 0; v < N; v++) if (lab[v] < 0 && P[v * 3 + 1] < foot) flood(v, hip, 0);
     let dx = 0, k = 0; for (let i = 0; i < n; i++) if (p.getY(i) < foot) { dx += Math.abs(p.getX(i)); k++; }
-    const si = new Uint16Array(n * 4), sw = new Float32Array(n * 4);
     for (let i = 0; i < n; i++) {
-      const w = leg[weld[i]] ? ss(-p.getY(i), -hip, -knee) : 0, f = ss(p.getX(i) * fs, -0.04, 0.04);
+      const w = lab[weld[i]] === 0 ? ss(-p.getY(i), -hip, -knee) : 0, f = ss(p.getX(i) * fs, -0.04, 0.04);
       si.set([0, 1, 2, 0], i * 4); sw.set([1 - w, w * f, w * (1 - f), 0], i * 4);
     }
-    g.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(si, 4)); g.setAttribute('skinWeight', new THREE.Float32BufferAttribute(sw, 4));
-    return { g, hip, S: Math.atan2(dx / k, hip - bb.min.y) };   // S: how far each leg is swung in the frozen pose
+    const S = fs * Math.atan2(dx / k, hip - bb.min.y);   // how far each leg is swung in the frozen pose
+    for (const sg of [1, -1]) bones.push({ at: [0, hip, 0], amp: sg * S, lp: Math.PI / 2, rest: sg * S });   // legs pass at the bob's peak
+    return done('z');
   })();
-  const root = new THREE.Bone(), legs = [new THREE.Bone(), new THREE.Bone()], sk = new THREE.SkinnedMesh(L.g, mesh.material);
-  for (const b of legs) { b.position.y = L.hip; root.add(b); }
+  const root = new THREE.Bone(), legs = L.bones.map(b => { const o = new THREE.Bone(); o.position.fromArray(b.at); root.add(o); return o; }), sk = new THREE.SkinnedMesh(L.g, mesh.material);
   sk.position.copy(mesh.position); sk.quaternion.copy(mesh.quaternion); sk.scale.copy(mesh.scale); sk.add(root);
   mesh.parent.add(sk); mesh.removeFromParent(); m.updateMatrixWorld(true); sk.bind(new THREE.Skeleton([root, ...legs]));
-  return { legs, S: L.S * fs };
+  return { legs, gait: L.bones, axis: L.axis };
 }
 function glbDecor(kind, side) {
   const spec = DECOR_GLB[kind], names = spec ? spec.names.filter(n => GLB[n]) : [];
@@ -1362,7 +1376,7 @@ function buildDecor() {
     m.rotation.y = w.fwd === '-x' ? dir * Math.PI / 2 : w.fwd === '+x' ? -dir * Math.PI / 2 : dir > 0 ? Math.PI : 0;
     const z = DECOR_FRONT - i * (DECOR_SPAN / 7) - rand(0, 10), x = side * rand(4.7, 5.6);
     m.position.set(x, 0.14, z); scene.add(m);
-    decor.push({ m, z, kind: 'walker', len: 0, vz: dir * w.speed, bob: w.bob, rate: w.rate, ph: rand(0, 6), ...(w.name.startsWith('pedestrian-') && legRig(w.name, m, w.fwd)) });
+    decor.push({ m, z, kind: 'walker', len: 0, vz: dir * w.speed, bob: w.bob, rate: w.rate, ph: rand(0, 6), ...legRig(w.name, m, w.fwd) });
   }
   for (const { z0, list } of Object.values(chunkParts)) {
     const m = new THREE.Mesh(mergeGeos(list), VC); m.position.z = z0; scene.add(m);
@@ -1920,7 +1934,7 @@ function updateWorld(dt) {
     d.m.position.z = d.z;
     if (d.kind === 'crowd') d.m.position.y = 0.14 + Math.abs(Math.sin(t * 6 + d.ph)) * 0.22;
     if (d.kind === 'walker') d.m.position.y = 0.14 + Math.abs(Math.sin(t * d.rate + d.ph)) * d.bob;
-    if (d.legs) { const a = d.S * (Math.cos(t * d.rate + d.ph) - 1); d.legs[0].rotation.z = a; d.legs[1].rotation.z = -a; }   // legs pass at the bob's peak
+    if (d.legs) d.legs.forEach((b, i) => { const q = d.gait[i]; b.rotation[d.axis] = q.amp * Math.sin(t * d.rate + d.ph + q.lp) - q.rest; });
     if (d.kind === 'steam' && d.z > -70 && d.z < 8 && (d.steam -= dt) <= 0) {   // kettle steam
       d.steam = 0.18; _steam.copy(d.m.position);
       burst(_steam.x, _steam.y, _steam.z, 1, ['#ffffff', '#fff3e6'], { speed: 0.25, up: 1.2, size: 0.2, life: 1.0, grav: -0.6 });
