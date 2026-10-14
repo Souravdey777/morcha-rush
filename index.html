@@ -525,7 +525,6 @@ function signTex(lines, { bg = COL.cream, fg = COL.plum, border = COL.pink, w = 
   });
 }
 const TEX = {
-  hmmm: signTex(['HMMM 🤔'], { border: COL.plum, font: 120, h: 290 }),
   barricade: signTex(['ADJUSTING,', 'PLEASE WAIT'], { border: COL.saffron, font: 70 }),
   s144: signTex(['SECTION 144'], { border: COL.pink, font: 96, w: 640, h: 290 }),
   route: signTex(['« ROUTE DIVERTED »'], { bg: COL.saffron, border: COL.plum, font: 70, w: 768, h: 200 }),
@@ -683,10 +682,6 @@ function buildCharacter(id) {
     const poster = M(G.cyl, COL.cream, 0.22, 1.78, -0.5, 0.07, 0.7, 0.07); poster.rotation.z = -0.25; body.add(poster);
     for (const s of [-1, 1]) body.add(M(G.box, '#0e8f84', s * 0.2, 1.15, 0.27, 0.08, 0.5, 0.05));
     const hood = M(G.torus, '#2f6bff', 0, 1.42, -0.15, 0.26, 0.26, 0.4); hood.rotation.x = Math.PI / 2; body.add(hood);
-    arms[1].userData.fixed = true; arms[1].rotation.set(0, 0, 2.3);   // arm raised, holding the placard
-    body.add(M(G.cyl, '#8a5a2b', 0.74, 1.95, 0.05, 0.035, 1.15, 0.035));
-    body.add(M(G.box, COL.plum, 0.74, 2.62, 0.05, 1.02, 0.62, 0.03));
-    const sign = signMesh(TEX.hmmm, 0.95, 0.55, true); sign.position.set(0.74, 2.62, 0.05); body.add(sign);
   }
   if (id === 'dadi') {
     body.add(M(G.skirt, COL.pink, 0, 0.5, 0));                         // bell-shaped saree
@@ -776,7 +771,7 @@ function poseRig(r, ph, mode) {
 }
 // Springy googly pupils: they lag behind motion and wobble.
 function jiggleEyes(r, dt, tx, ty) {
-  const k = 140, d = 9;
+  const k = 60, d = 14;   // soft, well-damped spring: pupils drift, they don't rattle
   r.eyeV.x += ((tx - r.eye.x) * k - r.eyeV.x * d) * dt; r.eyeV.y += ((ty - r.eye.y) * k - r.eyeV.y * d) * dt;
   r.eye.x = clamp(r.eye.x + r.eyeV.x * dt, -0.35, 0.35); r.eye.y = clamp(r.eye.y + r.eyeV.y * dt, -0.35, 0.35);
   for (const p of r.pupils) { p.position.x = p.userData.base.x + r.eye.x; p.position.y = p.userData.base.y + r.eye.y; }
@@ -831,14 +826,6 @@ function buildGlbCharacter(id) {
 const rigs = {};
 for (const c of CHARS) { rigs[c.id] = buildGlbCharacter(c.id) || buildCharacter(c.id); rigs[c.id].root.visible = false; scene.add(rigs[c.id].root); }
 let inspector = buildGlbCharacter('inspector') || buildCharacter('inspector'); scene.add(inspector.root);
-function addPlacard() {   // the Higgsfield Guddu lost his placard, so he gets one that follows his right hand
-  if (!rigs.guddu.glb || rigs.guddu.placard) return;
-  const pl = new THREE.Group();
-  pl.add(M(G.cyl, '#8a5a2b', 0, 0.55, 0, 0.035, 1.1, 0.035), M(G.box, COL.plum, 0, 1.2, 0, 1.02, 0.62, 0.03));
-  const sign = signMesh(TEX.hmmm, 0.95, 0.55, true); sign.position.set(0, 1.2, 0); pl.add(sign);
-  rigs.guddu.placard = pl; rigs.guddu.body.add(pl);   // rides in his backpack, so it flips and leans with him
-}
-addPlacard();
 // The Higgsfield models only ship a run clip, so these poses are hand-built on their shared 24-bone skeleton:
 // bone turns in degrees about the character's own axes (x right, y up, z forward), applied over the bind pose.
 // `ground` bones are then dropped to the bind pose's feet + lift × height.
@@ -870,6 +857,55 @@ function bakePose(r, name) {
   r.rest.forEach(([b], i) => b.quaternion.copy(now[i]));
   return { q, dy };
 }
+// MC Dhol's drum hangs off his chest bone but his run clip swings his arms free of it. Solve two-bone IK from the bind pose
+// (elbows down and back, each bone turned the shortest way so the forearm doesn't twist) to put a palm on each drum head;
+// animate() then holds his arms there whatever else he's doing.
+const _ta = new THREE.Vector3(), _tb = new THREE.Vector3(), _tc = new THREE.Vector3(), _tq = new THREE.Quaternion(), _tw = new THREE.Quaternion();
+function aimBone(b, from, to) {   // turn bone b (world positions from -> to, seen from b) the shortest way
+  b.getWorldPosition(_ta); _tq.setFromUnitVectors(_tb.copy(from).sub(_ta).normalize(), _tc.copy(to).sub(_ta).normalize());
+  b.parent.getWorldQuaternion(_tw); b.quaternion.premultiply(_tw.clone().invert().multiply(_tq).multiply(_tw)); b.updateMatrixWorld(true);
+}
+const MITTEN_MAT = new THREE.MeshLambertMaterial({ color: '#c98a5a' }), MITTEN_GEO = new THREE.SphereGeometry(1, 16, 12), FINGER_GEO = new THREE.CapsuleGeometry(1, 2.2, 4, 8);
+function drumGrip(r) {
+  const cap = r.model.getObjectByName('mesh_4'), drum = r.model.getObjectByName('mesh_1');   // drum-head cap and drum body
+  if (!r.model.getObjectByName('Dhol') || !cap || !drum) return false;
+  const now = r.rest.map(([b]) => b.quaternion.clone());
+  for (const [b, q] of r.rest) b.quaternion.copy(q);
+  r.model.updateMatrixWorld(true);
+  const mid = p => (p.geometry.boundingBox || (p.geometry.computeBoundingBox(), p.geometry.boundingBox)).getCenter(new THREE.Vector3()).applyMatrix4(p.matrixWorld);
+  const centre = mid(drum), end = mid(cap), axis = end.clone().sub(centre).normalize();   // the cap sits on his left
+  const up = new THREE.Vector3(0, 1, 0).transformDirection(r.model.matrixWorld), k = r.H / 2.1;   // world units for a 2.1-tall runner
+  const fwd = new THREE.Vector3(0, 0, 1).transformDirection(r.model.matrixWorld), R = 0.2 * k, th = 0.6;   // drum radius; hands sit 35° forward of its top
+  const rad = up.clone().multiplyScalar(Math.cos(th)).addScaledVector(fwd, Math.sin(th)), tan = fwd.clone().multiplyScalar(Math.cos(th)).addScaledVector(up, -Math.sin(th));
+  const down = new THREE.Vector3(0, -1, -0.6).transformDirection(r.model.matrixWorld), grip = [];
+  for (const side of ['Left', 'Right']) {
+    const arm = r.model.getObjectByName(side + 'Arm'), fore = r.model.getObjectByName(side + 'ForeArm'), hand = r.model.getObjectByName(side + 'Hand');
+    const palmAt = centre.clone().addScaledVector(axis, (side === 'Left' ? 1 : -1) * 0.27 * k).addScaledVector(rad, R + 0.02 * k);   // on the shell near each end
+    const T = palmAt.clone().addScaledVector(tan, -0.06 * k);   // wrist sits behind the palm; fingers curl over the front
+    const S = arm.getWorldPosition(new THREE.Vector3()), E = fore.getWorldPosition(new THREE.Vector3()), H = hand.getWorldPosition(new THREE.Vector3());
+    const l1 = S.distanceTo(E), l2 = E.distanceTo(H), d = Math.min(S.distanceTo(T), (l1 + l2) * 0.999);
+    const u = T.clone().sub(S).normalize(), v = down.clone().addScaledVector(u, -down.dot(u)).normalize();
+    const a = Math.acos(clamp((l1 * l1 + d * d - l2 * l2) / (2 * l1 * d), -1, 1));
+    aimBone(arm, E, S.clone().addScaledVector(u, Math.cos(a) * l1).addScaledVector(v, Math.sin(a) * l1));
+    aimBone(fore, hand.getWorldPosition(new THREE.Vector3()), T);
+    grip.push([arm, arm.quaternion.clone()], [fore, fore.quaternion.clone()]);
+    // The model's hands have extra fingers, so they're shrunk away (see animate) and a cartoon hand rides the forearm instead:
+    // palm down on the drum shell, fingers over the front.
+    const n = rad.clone().negate(), m = new THREE.Matrix4().makeBasis(new THREE.Vector3().crossVectors(tan, n), tan, n);   // fingers along tan, palm facing the drum
+    m.setPosition(hand.getWorldPosition(new THREE.Vector3())).scale(_tb.setScalar(k));
+    const mitten = new THREE.Group(); m.premultiply(fore.matrixWorld.clone().invert()).decompose(mitten.position, mitten.quaternion, mitten.scale);
+    const palm = new THREE.Mesh(MITTEN_GEO, MITTEN_MAT); palm.scale.set(0.052, 0.058, 0.024); palm.position.set(0, 0.06, 0); mitten.add(palm);
+    for (let f = 0; f < 4; f++) {   // four cartoon fingers across the end of the palm
+      const g = new THREE.Mesh(FINGER_GEO, MITTEN_MAT); g.scale.setScalar(0.0125); g.position.set(-0.033 + f * 0.022, 0.125 - Math.abs(f - 1.5) * 0.008, 0); mitten.add(g);
+    }
+    const tx = side === 'Left' ? -1 : 1;   // local +x is his left on both hands; thumbs point inward
+    const thumb = new THREE.Mesh(FINGER_GEO, MITTEN_MAT); thumb.scale.setScalar(0.014); thumb.position.set(0.056 * tx, 0.04, 0); thumb.rotation.z = -0.9 * tx; mitten.add(thumb);
+    mitten.traverse(o => { o.castShadow = true; }); fore.add(mitten);
+  }
+  grip.hands = ['LeftHand', 'RightHand'].map(n => r.model.getObjectByName(n));
+  r.rest.forEach(([b], i) => b.quaternion.copy(now[i]));
+  return grip;
+}
 // Drive a character: Higgsfield models play their run clip and blend into POSES; code-built rigs use procedural poses.
 function animate(r, mode, dt, rate, phase) {
   if (!r.glb) { poseRig(r, phase, mode === 'sit' || mode === 'caught' ? 'run' : mode === 'stand' ? 'idle' : mode); return; }
@@ -878,18 +914,16 @@ function animate(r, mode, dt, rate, phase) {
   r.poseW = POSES[mode] ? Math.min(1, r.poseW + dt / 0.12) : Math.max(0, r.poseW - dt / 0.12);
   const w = r.poseW * r.poseW * (3 - 2 * r.poseW), p = r.pose && w > 0 && (r.poses[r.pose] ||= bakePose(r, r.pose));
   if (p) for (const [b, q] of p.q) b.quaternion.slerp(q, w);
+  if (r.grip ??= drumGrip(r)) {   // MC Dhol keeps both hands on his dhol
+    for (const [b, q] of r.grip) b.quaternion.copy(q);
+    for (const h of r.grip.hands) h.scale.setScalar(0.001);   // hide the model's six-fingered hands behind the cartoon ones
+  }
   r.model.position.y = r.y0 + (p ? p.dy * w : 0);
   r.body.rotation.set(0, 0, 0); r.body.position.y = r.H / 2;
   if (mode === 'jump') r.body.rotation.x = clamp((CONFIG.JUMP_VELOCITY - player.vy) / (2 * CONFIG.JUMP_VELOCITY), 0, 1) * Math.PI * 2;   // front flip
   else if (mode === 'idle') r.body.position.y = r.H / 2 + Math.abs(Math.sin(phase)) * 0.08;
   else if (mode === 'stand') r.body.position.y = r.H / 2 + Math.sin(phase * 0.3) * 0.012;   // breathing
-  if (r.placard) {
-    r.placard.visible = r.root.visible && mode !== 'slide';
-    if (r.placard.visible) {   // stuck in his backpack, leaning with his run, board just above his head
-      r.placard.position.set(-0.12, 0.45, 0.14);
-      r.placard.rotation.set(0.32, 0, Math.sin(phase) * 0.06);
-    }
-  }
+
 }
 
 /* =====================================================================
@@ -1280,7 +1314,7 @@ for (let i = 0; i < CONF_N; i++) {
 confetti.frustumCulled = false; scene.add(confetti);
 
 /* =====================================================================
-   Meme Bible set pieces: doorbell gate, the little brown visitor, phone
+   Meme Bible set pieces: doorbell gate, the little brown visitor
    ===================================================================== */
 const gate = new THREE.Group();   // generic big gate with a doorbell: every run starts with a Ding-Dong-Ditch
 {
@@ -1302,8 +1336,6 @@ const roach = { obj: new THREE.Group(), active: false, done: false, at: 0, dir: 
   roach.hit = new THREE.Mesh(new THREE.SphereGeometry(0.9, 8, 6), new THREE.MeshBasicMaterial({ visible: false })); roach.obj.add(roach.hit);   // fat tap target
   roach.obj.visible = false; scene.add(roach.obj);
 }
-const phone = new THREE.Group();   // for the 'chronically online' idle
-phone.add(M(G.box, '#1a1024', 0, 0, 0, 0.16, 0.3, 0.025), M(G.box, basicMat('#7fd6ff'), 0, 0.005, 0.014, 0.13, 0.25, 0.005)); phone.visible = false; scene.add(phone);
 
 /* =====================================================================
    Comic text pops, sound blips
@@ -1355,7 +1387,7 @@ const SFX = {
 let state = 'MENU';            // MENU → PLAYING ⇄ PAUSED → CAUGHT → GAMEOVER → (PLAYING | MENU)
 let selIdx = Math.max(0, CHARS.findIndex(c => c.id === save.selected));
 let t = 0, runT = 0, speed = 0, ws = 0, dist = 0, coinsRun = 0, bonus = 0, spawnZ = 0, shakeT = 0, caughtT = 0, caughtSpeed = 0;
-let chaseT = 0, chaseBeat = 0, introT = 0, revived = false, coinsBanked = 0, bijliT = 0, bijliDark = 0, tearsEnd = -99, nextBijli = 0, menuIdle = 0, persistT = 0;
+let chaseT = 0, chaseBeat = 0, introT = 0, revived = false, coinsBanked = 0, bijliT = 0, bijliDark = 0, tearsEnd = -99, nextBijli = 0, persistT = 0;
 let inspZ = CONFIG.INSPECTOR_FAR_Z, inspX = 0, runPhase = 0, warnOn = false, steamT = 0, lastLanding = 0;
 const power = { chai: 0, dhol: 0, press: 0, thali: 0, slow: 0 };
 const player = { lane: 0, x: 0, y: 0, vy: 0, onGround: true, slideT: 0, stumbleT: 0, invulnT: 0, lastSwitch: -9, thela: false,
@@ -1364,9 +1396,8 @@ const player = { lane: 0, x: 0, y: 0, vy: 0, onGround: true, slideT: 0, stumbleT
 function selectChar(i) {
   selIdx = (i + CHARS.length) % CHARS.length;
   for (const id in rigs) rigs[id].root.visible = false;
-  if (rigs.guddu.placard) rigs.guddu.placard.visible = false;   // re-shown by animate() only while Guddu is active
   player.rig = rigs[CHARS[selIdx].id]; player.rig.root.visible = true;
-  shoutEl.textContent = CHARS[selIdx].shout; shoutT = 2.4; menuIdle = 0;
+  shoutEl.textContent = CHARS[selIdx].shout; shoutT = 2.4;
   if (save.unlocked.includes(CHARS[selIdx].id)) { save.selected = CHARS[selIdx].id; persist(); }
   refreshMenu();
 }
@@ -1395,7 +1426,7 @@ function startGame() {
   if (!isUnlocked()) return;
   if (!modelsReady) { pendingStart = true; $('btnPlay').textContent = 'LOADING…'; return; }   // models still on their way
   pendingStart = false;
-  resetRun(); state = 'PLAYING'; menuIdle = 0;
+  resetRun(); state = 'PLAYING';
   save.stats.runs++; checkAch(); persist();
   show('hud');
 }
@@ -1403,7 +1434,7 @@ function goMenu() {
   for (const p of allPools) p.releaseAll();
   state = 'MENU'; strip.visible = shock.visible = cart.visible = stars.visible = false; $('warn').classList.add('hidden');
   const r = player.rig.root; r.position.set(0, 0, 0); r.rotation.set(0, 0, 0); r.visible = true;
-  inspector.root.visible = false; gate.visible = roach.obj.visible = false; setLight(1); $('bijli').classList.add('hidden'); menuIdle = 0; show('menu'); refreshMenu();
+  inspector.root.visible = false; gate.visible = roach.obj.visible = false; setLight(1); $('bijli').classList.add('hidden'); show('menu'); refreshMenu();
 }
 function revive() {   // Rishwat: pay Daroga Ji from the wallet, once per run, and carry on from where you were detained
   if (state !== 'GAMEOVER' || revived || save.totalCoins < CONFIG.BRIBE_COST) return;
@@ -1842,9 +1873,9 @@ function updateWorld(dt) {
 
 // Menu speech bubble ("RE-EXAM!") pops above the character's head.
 const shoutEl = $('shout'), _feet = new THREE.Vector3(), _top = new THREE.Vector3();
-function placeShout(H, side) {
+function placeShout(H) {
   shoutEl.hidden = !(shoutT > 0); if (shoutT <= 0) return;
-  _feet.set(side, 0, 0).project(camera); _top.set(side, H, 0).project(camera);
+  _feet.set(0, 0, 0).project(camera); _top.set(0, H, 0).project(camera);
   const x = (_feet.x + 1) / 2 * innerWidth, y = (1 - _top.y) / 2 * innerHeight, pop = Math.min(1, (2.4 - shoutT) * 6);   // spring in
   shoutEl.style.transform = `translate(calc(${x}px - 50%), ${y - 8 - shoutEl.offsetHeight}px) scale(${0.6 + pop * 0.4}) rotate(-3deg)`;
 }
@@ -1854,19 +1885,15 @@ function updateCharacters(dt) {
   const r = player.rig, playing = state === 'PLAYING' || state === 'CAUGHT';
   shoutEl.hidden = true;
   if (state === 'MENU') {
-    menuIdle += dt; const lazy = menuIdle > 10;   // leave him alone and he lies down to scroll
+    r.root.visible = modelsReady;   // no blocky stand-ins while the 3D runners are still downloading
+    if (!modelsReady) return;
     runPhase += dt * 6; animate(r, 'stand', dt, 0.6, runPhase);
-    placeShout(r.H || 2, r.placard?.visible ? 0.6 : 0);   // beside Guddu's placard, not over it
+    placeShout(r.H || 2);
     r.root.position.set(0, 0, 0); r.root.scale.setScalar(r.baseScale);
-    if (lazy) {
-      if (!phone.visible) { phone.visible = true; pop('11 HRS/DAY 📱', 0, 1.6, 0, 'teal'); $('hint').textContent = '💡 ' + TIPS[3]; }
-      r.root.rotation.y = 1.1; r.body.rotation.x = -Math.PI / 2; r.body.position.y = 0.3;
-      phone.position.set(-0.6, 0.85, -0.3); phone.rotation.set(-1.2, 1.1, 0);   // held above his face
-    } else { phone.visible = false; r.root.rotation.y = Math.sin(t * 0.6) * 0.45; }   // face the camera, sway a little
-    jiggleEyes(r, dt, Math.sin(t * 2) * 0.2, Math.cos(runPhase) * 0.15);
+    r.root.rotation.y = Math.sin(t * 0.6) * 0.45;   // face the camera, sway a little
+    jiggleEyes(r, dt, Math.sin(t * 0.6) * 0.12, Math.sin(t * 0.45) * 0.05);   // slow look-around
     return;
   }
-  phone.visible = false;
   if (state === 'PLAYING' && introT > 0) {   // doorbell intro: ding the gate, then run
     animate(r, 'idle', dt, 0.5, runPhase += dt * 6);
     r.root.position.set(player.x, 0, 0); r.root.rotation.set(0, Math.PI, 0);   // face down the road: GLB idle is a run cycle, so facing the gate looked like running the wrong way
@@ -1887,14 +1914,14 @@ function updateCharacters(dt) {
     const wobble = player.stumbleT > CONFIG.STUMBLE_RECOVER - 0.8 || state === 'CAUGHT' ? Math.sin(t * 22) * 0.25 : 0;
     r.root.rotation.set(0, Math.PI, lean + wobble + (player.thela ? Math.sin(t * 7) * 0.08 : 0));
     r.root.visible = !(player.invulnT > 0 || power.press > 0) || Math.sin(t * 40) > -0.3;   // blink while invulnerable
-    jiggleEyes(r, dt, (player.x - player.prevX) / Math.max(dt, 1e-3) * 0.02, -player.vy * 0.025 + Math.sin(runPhase * 2) * 0.12);
+    jiggleEyes(r, dt, (player.x - player.prevX) / Math.max(dt, 1e-3) * 0.01, -player.vy * 0.012);   // glance with lane switches and jumps
     cart.visible = player.thela; if (player.thela) { cart.position.set(player.x, player.y + hover - 0.42 + 0.05, 0.05); cart.rotation.set(0, 0, Math.sin(t * 7) * 0.08); }
     stars.visible = player.stumbleT > CONFIG.STUMBLE_RECOVER - 1.6 || state === 'CAUGHT';
     if (stars.visible) { stars.position.set(player.x, player.y + (r.H || 2.1 * r.baseScale) + 0.25, 0); stars.rotation.y += dt * 6; }
     // Inspector: runs behind, waves the clipboard
     animate(inspector, 'run', dt, state === 'CAUGHT' ? 1.2 : clamp(ws / 16, 0.8, 1.8) * 0.95, runPhase * 0.95 + 1);
     inspector.root.position.set(inspX, 0, inspZ); inspector.root.rotation.set(0, Math.PI, 0);
-    jiggleEyes(inspector, dt, Math.sin(t * 3) * 0.15, Math.sin(runPhase * 2) * 0.1);
+    jiggleEyes(inspector, dt, Math.sin(t * 0.8) * 0.1, 0);
   }
 }
 
@@ -1988,7 +2015,6 @@ addEventListener('keydown', e => {
   const k = e.key;
   if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', ' '].includes(k)) e.preventDefault();
   if (actx && actx.state === 'suspended') actx.resume();
-  menuIdle = 0;
   if (e.repeat && k !== ' ') return;
   if ((k === 't' || k === 'T') && DEBUG) { tears(); return; }   // debug: trigger the teary screen
   if (state === 'MENU') {
@@ -2009,7 +2035,6 @@ addEventListener('keydown', e => {
 let touch = null;
 const _ray = new THREE.Raycaster(), _ndc = new THREE.Vector2();
 canvas.addEventListener('pointerdown', e => {   // tap the little brown visitor
-  menuIdle = 0;
   if (state !== 'PLAYING' || !roach.active) return;
   _ndc.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1); _ray.setFromCamera(_ndc, camera);
   if (_ray.intersectObject(roach.hit).length) catchRoach();
@@ -2067,7 +2092,7 @@ gameLoaded.then(() => {
   }
   const insp = buildGlbCharacter('inspector');
   if (insp) { scene.remove(inspector.root); inspector = insp; inspector.root.visible = false; scene.add(inspector.root); }
-  addPlacard(); fitPropBoxes();
+  fitPropBoxes();
   if (GLB['powerup-jugaad-thela']) { cart.remove(cart.children[0]); const m = GLB['powerup-jugaad-thela'].scene.clone(true); m.scale.setScalar(1.35); cart.add(m); }
   for (const type of [...Object.keys(OB), 'power']) { for (const it of pools[type].items) scene.remove(it.obj); pools[type].items.length = 0; }   // drop the stand-in obstacles
   prewarm(); modelsReady = true;
