@@ -68,8 +68,9 @@ button{pointer-events:auto;font:inherit;cursor:pointer;border:0;color:inherit;ba
   #menu .card{width:min(46vw,420px)}
 }
 @media (min-aspect-ratio: 6/5) and (max-height:480px){ #menu .hint,#menu .dots{display:none} #menu .card{padding:10px 12px} }
-#mute{position:absolute;right:max(14px,env(safe-area-inset-right));top:max(14px,env(safe-area-inset-top));
+#mute,#info{position:absolute;right:max(14px,env(safe-area-inset-right));top:max(14px,env(safe-area-inset-top));
   width:44px;height:44px;border-radius:50%;background:var(--cream);border:3px solid var(--plum);font-size:20px;box-shadow:0 3px 0 var(--plum)}
+#info{right:max(68px,calc(env(safe-area-inset-right) + 54px));font-weight:700;font-family:Georgia,serif}
 
 /* ---------- HUD ---------- */
 #hud{position:absolute;inset:0;padding:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) 10px max(10px,env(safe-area-inset-left))}
@@ -195,6 +196,7 @@ h2{font-size:clamp(40px,11vw,64px);color:var(--pink);-webkit-text-stroke:2px var
       <div class="stats">Best <b id="mBest">0</b> · Wallet <b id="mCoins">₹ 0</b></div>
       <p class="hint" id="hint"></p>
     </div>
+    <button id="info" aria-label="About this game">i</button>
     <button id="mute" aria-label="Toggle sound">🔊</button>
   </div>
 
@@ -249,6 +251,9 @@ h2{font-size:clamp(40px,11vw,64px);color:var(--pink);-webkit-text-stroke:2px var
 
   <div id="achPanel" class="panel hidden" style="justify-content:center;background:rgba(42,27,61,.35)">
     <div class="card"><h2 style="font-size:34px">ACHIEVEMENTS</h2><div class="list" id="achList"></div><button class="btn alt" data-close>CLOSE</button></div>
+  </div>
+  <div id="aboutPanel" class="panel hidden" style="justify-content:center;background:rgba(42,27,61,.35)">
+    <div class="card"><h2 style="font-size:34px">ABOUT</h2><p class="sub">Morcha Rush, made by <b>Sourav Dey</b>.</p><p class="sub"><a href="https://github.com/Souravdey777/morcha-rush" target="_blank" rel="noopener">github.com/Souravdey777/morcha-rush</a></p><button class="btn alt" data-close>CLOSE</button></div>
   </div>
   <div id="helpPanel" class="panel hidden" style="justify-content:center;background:rgba(42,27,61,.35)">
     <div class="card"><h2 style="font-size:34px">HOW TO PLAY</h2><div class="list"><h3>The run</h3><div class="it"><span class="em">🏃</span><div><b>Run the march</b><small>Ring the gate bell and BHAAG! Switch lanes, jump and slide. Collect ₹ coins to unlock new runners.</small></div></div><div class="it"><span class="em">🚨</span><div><b>Daroga Ji</b><small>Crash once and you stumble: he closes in for a few seconds. Crash again before you recover and he catches you. Caught? Pay him ₹500 from your wallet to carry on, once per run.</small></div></div><div class="it"><span class="em">⌨️</span><div><b>Controls</b><small>Desktop: ← → or A D to switch lanes, ↑ / W to jump, ↓ / S to slide, P to pause. Phone: swipe left, right, up or down.</small></div></div><h3>Obstacles</h3><div class="it"><span class="em">🚧</span><div><b>Barricade</b><small>"Adjusting, please wait." Jump over it.</small></div></div><div class="it"><span class="em">🚫</span><div><b>Section 144 sign</b><small>Slide under it.</small></div></div><div class="it"><span class="em">🕳️</span><div><b>Pothole</b><small>The road budget went somewhere. Jump over it.</small></div></div><div class="it"><span class="em">🧅</span><div><b>Onion cart</b><small>Jump over it. Hit one and you will be in tears.</small></div></div><div class="it"><span class="em">🚓</span><div><b>VIP convoy</b><small>Route diverted. Too big to jump: switch lanes.</small></div></div><div class="it"><span class="em">🚉</span><div><b>Station closed</b><small>Inconvenience regretted. Too tall to jump, no gap to slide: switch lanes.</small></div></div><h3>Power-ups</h3><div class="it"><span class="em">☕</span><div><b>Cutting Chai</b><small>5 seconds of extra speed. You smash through anything in your way.</small></div></div><div class="it"><span class="em">🥁</span><div><b>Dhol Beat</b><small>6 seconds of smashing straight through barricades.</small></div></div><div class="it"><span class="em">📸</span><div><b>Press Pass</b><small>4 seconds of invincibility. EXPOSED!</small></div></div><div class="it"><span class="em">🛺</span><div><b>Jugaad Thela</b><small>Ride a cart that takes one crash for you.</small></div></div><div class="it"><span class="em">🍽️</span><div><b>Steel Thali</b><small>Thali Dadi's, borrowed. The clatter stuns Daroga Ji for 3 seconds, and gets you out of a stumble.</small></div></div><h3>Watch out for</h3><div class="it"><span class="em">📘</span><div><b>Required Reading</b><small>A rare book worth +50 coins.</small></div></div><div class="it"><span class="em">🍔</span><div><b>Shiny burger</b><small>Looks like a power-up. It is a trap: bad optics slow you down for 2 seconds.</small></div></div><div class="it"><span class="em">⚡</span><div><b>Bijli Gayi</b><small>Random power cuts plunge the street into darkness for 5 to 15 seconds.</small></div></div><div class="it"><span class="em">🪳</span><div><b>The little brown visitor</b><small>Shows up once a run. Tap it for a bonus and an achievement.</small></div></div></div><button class="btn alt" data-close>GOT IT</button></div>
@@ -1304,7 +1309,7 @@ function resetRun() {
   inspZ = CONFIG.INSPECTOR_FAR_Z; inspX = 0; warnOn = false;
   strip.visible = shock.visible = cart.visible = stars.visible = false;
   introT = 1.2; revived = false; coinsBanked = 0; bijliT = 0; tearsEnd = -99; nextBijli = rand(...CONFIG.BIJLI_EVERY); setLight(1); $('bijli').classList.add('hidden');
-  player.lane = -1; player.x = laneX(-1); gate.visible = true; gate.position.set(-4.7, 0.14, -0.5);
+  gate.visible = true; gate.position.set(-4.7, 0.14, -0.5);
   roach.active = false; roach.done = false; roach.obj.visible = false; roach.at = rand(...CONFIG.ROACH_WINDOW);
   $('warn').classList.add('hidden'); $('insp').classList.remove('hot');
   const r = player.rig.root; r.position.set(0, 0, 0); r.rotation.set(0, Math.PI, 0); r.visible = true;
@@ -1900,6 +1905,7 @@ function renderAch() {
 }
 $('btnAch').onclick = () => { renderAch(); openPanel('achPanel'); };
 $('btnHelp').onclick = () => openPanel('helpPanel');
+$('info').onclick = () => openPanel('aboutPanel');
 document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => b.closest('.panel').classList.add('hidden'));
 $('btnRevive').onclick = revive;
 function playOrUnlock() {
