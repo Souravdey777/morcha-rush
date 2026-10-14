@@ -113,6 +113,13 @@ h2{font-size:clamp(40px,11vw,64px);color:var(--pink);-webkit-text-stroke:2px var
 #pause .quip{font-size:18px}
 #pause .sub{margin-top:12px;line-height:1.5;font-size:15px}
 #pause .row{margin-top:20px}
+#over .card{width:min(560px,100%);padding:22px 28px}
+#over .quip{font-size:17px;line-height:1.4}
+#over .grid{gap:10px}
+#over .stats{margin:0 0 14px;font-size:16px}
+#over .sub{margin-top:14px;font-size:14px}
+#btnRevive{font-size:clamp(15px,4.2vw,22px)}
+@media (min-aspect-ratio: 6/5) and (max-height:480px){ #over .card{width:min(640px,100%);padding:10px 16px} #over h2{font-size:34px} #over .quip{margin:4px 0 8px;font-size:14px} #over .grid{grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px} #over .grid b{font-size:18px} #over .stats{margin-bottom:8px;font-size:14px} #over .btn{font-size:18px;padding:.3em 1.1em} #over .sub{display:none} }
 
 #pops{position:absolute;inset:0;overflow:hidden}
 .pop{position:absolute;left:0;top:0;opacity:0;white-space:nowrap;font-size:clamp(22px,6vw,40px);color:var(--marigold);
@@ -352,7 +359,7 @@ const CHARS = [   // bio = personality, shout = catchphrase (pops at their signa
   { id:'guddu',  name:'Guddu',                  shout:'RE-EXAM!',      bio:'Third attempt. Second leak. Still has the admit card laminated.', ability:'No special move. Just hope.' },
   { id:'dadi',   name:'Thali Dadi',             shout:'THAN-THAN!',    bio:'Brought her steel thali from home. Didn\'t bring it back.', ability:'Chappal Swat: auto-swats a barricade every 8s.' },
   { id:'dhol',   name:'MC Dhol',                shout:'DHAM!',         bio:'Dropped a diss track at the barricade. Dhol is the beat, Jantar Mantar is the studio.', ability:'Beat Drop: every landing sends a shockwave that clears obstacles ahead.' },
-  { id:'intern', name:'Camera Person',          shout:'LIKE & SHARE!', bio:'Rolling since the first barricade. The reel outlived the minister.', ability:'Viral Flash: every near-miss flashes the camera for +25.' },
+  { id:'intern', name:'Camera Person',          shout:'LIKE & SHARE!', bio:'Rolling since the first barricade. The reel outlived the minister.', ability:'Viral Flash: every near-miss snaps the camera for +25.' },
   { id:'cocky',  name:'Cocky',                  shout:'UNBOTHERED!',   bio:'Chronically online, 11 hours a day, bathroom breaks included. Lazy only in the physical sense.', ability:'Unkillable: shrugs off one crash per run.' },
 ];
 const DAROGA = { name: 'Daroga Ji', shout: 'CHALO THANE!', bio: 'Still waiting for your Form 26-A. Attested. Three copies.' };
@@ -1367,7 +1374,7 @@ function gameOver() {
   $('quip').textContent = withheld ? 'This runner has been withheld in your region.' : DAROGA.name + ': "' + DAROGA.bio + '"\n' + pick(QUIPS);
   const rb = $('btnRevive'), short = CONFIG.BRIBE_COST - save.totalCoins;
   rb.classList.toggle('hidden', revived); rb.disabled = short > 0;
-  rb.textContent = short > 0 ? `Chai-paani: ₹ ${CONFIG.BRIBE_COST} (need ₹ ${short} more)` : `Chai-paani do, chhoot jao · ₹ ${CONFIG.BRIBE_COST}`;
+  rb.textContent = short > 0 ? `Chai-paani: ₹\u00a0${CONFIG.BRIBE_COST} (need ₹\u00a0${short} more)` : `Chai-paani do, chhoot jao · ₹\u00a0${CONFIG.BRIBE_COST}`;
   $('oBest').textContent = save.best.toLocaleString();
   $('newBest').classList.toggle('hidden', !isBest);
   $('oPurseAmt').textContent = '₹ ' + save.totalCoins;
@@ -1678,7 +1685,7 @@ function updateEntities(dt) {
     if (!ob.passed && ob.z - ob.def.hz > 0.5) {
       ob.passed = true;
       const nearMiss = !ob.hit && (ob.lane === player.lane || (Math.abs(ob.lane - player.lane) === 1 && runT - player.lastSwitch < CONFIG.NEAR_MISS_LANE_TIME));
-      if (nearMiss && CHARS[selIdx].id === 'intern') { bonus += CONFIG.INTERN_BONUS; flash(); SFX.flash(); pop('LIKE & SHARE! +' + CONFIG.INTERN_BONUS, player.x, 2.4, -1, 'teal'); }
+      if (nearMiss && CHARS[selIdx].id === 'intern') { bonus += CONFIG.INTERN_BONUS; SFX.flash(); pop('LIKE & SHARE! +' + CONFIG.INTERN_BONUS, player.x, 2.4, -1, 'teal'); }
     }
   }
   // convoy warning: flashing lane strip + banner
