@@ -19,7 +19,6 @@ html,body{height:100%;overflow:hidden;background:#ffc9a3;color:var(--plum);
   font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:none;overscroll-behavior:none}
 #c{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
-#idlePic{position:fixed;left:0;top:0;pointer-events:none;transform-origin:50% 100%;filter:drop-shadow(0 6px 8px rgba(0,0,0,.35))}
 #ui{position:fixed;inset:0;pointer-events:none}
 .hidden{display:none!important}
 .chunky,.btn,.pill,.title,.pop,#warn,h2{font-family:"Arial Black","Arial Rounded MT Bold",Impact,system-ui,sans-serif;font-weight:900}
@@ -180,7 +179,6 @@ h2{font-size:clamp(40px,11vw,64px);color:var(--pink);-webkit-text-stroke:2px var
 </head>
 <body>
 <canvas id="c"></canvas>
-<img id="idlePic" alt="" hidden>
 <div id="shout" hidden></div>
 
 <div id="ui">
@@ -849,6 +847,7 @@ const POSES = {
   slide: { turns: [['Hips', X, -55], ['LeftUpLeg', X, -12], ['LeftLeg', X, 8], ['RightUpLeg', X, 20], ['RightLeg', X, 100], ['Spine02', X, 12], ['Head', X, 25],
     ['LeftArm', X, 35], ['LeftArm', Z, -15], ['RightArm', Z, -70], ['RightForeArm', Z, -30]],   // baseball slide: lean back, lead leg out, arm out for balance
     ground: ['Hips', 'LeftFoot', 'RightFoot', 'LeftToeBase', 'RightToeBase', 'RightLeg'], lift: -0.1 },
+  stand: { turns: [['LeftArm', Z, -22], ['RightArm', Z, 22], ['LeftForeArm', X, -12], ['RightForeArm', X, -12], ['Hips', Z, 3], ['Spine', Z, -3], ['Head', Z, 4]] },   // menu: relaxed, weight on one hip
   caught: { turns: [['LeftArm', Z, 125], ['RightArm', Z, -125], ['LeftForeArm', Z, 40], ['RightForeArm', Z, -40], ['Head', X, 12], ['Spine02', X, 6]] },   // hands up
   sit: { turns: [['LeftUpLeg', X, -80], ['RightUpLeg', X, -80], ['LeftLeg', X, 70], ['RightLeg', X, 70], ['LeftArm', Z, -20], ['RightArm', Z, 20],
     ['LeftArm', X, -30], ['RightArm', X, -30], ['Spine02', X, 10]], ground: ['Hips'], lift: 0.11 },   // riding the jugaad thela
@@ -873,7 +872,7 @@ function bakePose(r, name) {
 }
 // Drive a character: Higgsfield models play their run clip and blend into POSES; code-built rigs use procedural poses.
 function animate(r, mode, dt, rate, phase) {
-  if (!r.glb) { poseRig(r, phase, mode === 'sit' || mode === 'caught' ? 'run' : mode); return; }
+  if (!r.glb) { poseRig(r, phase, mode === 'sit' || mode === 'caught' ? 'run' : mode === 'stand' ? 'idle' : mode); return; }
   r.action.timeScale = rate; r.mixer.update(dt);
   if (POSES[mode]) r.pose = mode;
   r.poseW = POSES[mode] ? Math.min(1, r.poseW + dt / 0.12) : Math.max(0, r.poseW - dt / 0.12);
@@ -883,6 +882,7 @@ function animate(r, mode, dt, rate, phase) {
   r.body.rotation.set(0, 0, 0); r.body.position.y = r.H / 2;
   if (mode === 'jump') r.body.rotation.x = clamp((CONFIG.JUMP_VELOCITY - player.vy) / (2 * CONFIG.JUMP_VELOCITY), 0, 1) * Math.PI * 2;   // front flip
   else if (mode === 'idle') r.body.position.y = r.H / 2 + Math.abs(Math.sin(phase)) * 0.08;
+  else if (mode === 'stand') r.body.position.y = r.H / 2 + Math.sin(phase * 0.3) * 0.012;   // breathing
   if (r.placard) {
     r.placard.visible = r.root.visible && mode !== 'slide';
     if (r.placard.visible) {   // stuck in his backpack, leaning with his run, board just above his head
@@ -1366,7 +1366,7 @@ function selectChar(i) {
   for (const id in rigs) rigs[id].root.visible = false;
   if (rigs.guddu.placard) rigs.guddu.placard.visible = false;   // re-shown by animate() only while Guddu is active
   player.rig = rigs[CHARS[selIdx].id]; player.rig.root.visible = true;
-  shoutEl.textContent = CHARS[selIdx].shout; shoutT = 2.4;
+  shoutEl.textContent = CHARS[selIdx].shout; shoutT = 2.4; menuIdle = 0;
   if (save.unlocked.includes(CHARS[selIdx].id)) { save.selected = CHARS[selIdx].id; persist(); }
   refreshMenu();
 }
@@ -1840,47 +1840,29 @@ function updateWorld(dt) {
   if (shock.visible) { shock.userData.t += dt; const s = 0.5 + shock.userData.t * 14; shock.scale.set(s, s, s); shock.material.opacity = Math.max(0, 1 - shock.userData.t / 0.4); if (shock.userData.t > 0.4) shock.visible = false; }
 }
 
-// Menu idle: show the character's concept art (art/*.webp cutouts) standing where the 3D model would be.
-const IDLE_ART = { guddu: 'guddu', dadi: 'dadi-ji', dhol: 'dhol-bro', intern: 'camera-intern', cocky: 'cocky' };
-const idlePic = $('idlePic'), shoutEl = $('shout'), _feet = new THREE.Vector3(), _top = new THREE.Vector3();
-function showIdlePic(id, H) {
-  const name = IDLE_ART[id];
-  if (!name || idlePic.dataset.bad === name) return false;
-  if (idlePic.dataset.name !== name) { idlePic.dataset.name = name; idlePic.onerror = () => { idlePic.dataset.bad = name; idlePic.hidden = true; }; idlePic.src = 'art/' + name + '.webp'; }
-  if (!idlePic.naturalHeight) return idlePic.dataset.bad !== name;   // still loading: keep the 3D model hidden
-  _feet.set(0, 0, 0).project(camera); _top.set(0, H, 0).project(camera);
-  const h = (_top.y - _feet.y) / 2 * innerHeight * 1.1, w = h * idlePic.naturalWidth / idlePic.naturalHeight;
-  const x = (_feet.x + 1) / 2 * innerWidth, y = (1 - _feet.y) / 2 * innerHeight;
-  idlePic.style.width = w + 'px'; idlePic.style.height = h + 'px';
-  idlePic.style.transform = `translate(${x - w / 2}px, ${y - h}px) rotate(${Math.sin(t * 2.4) * 2}deg) scaleY(${1 + Math.abs(Math.sin(t * 2.4)) * 0.02})`;
-  idlePic.hidden = false;
-  shoutEl.hidden = !(shoutT > 0);
-  if (shoutT > 0) {
-    const pop = Math.min(1, (2.4 - shoutT) * 6);   // spring in
-    shoutEl.style.transform = `translate(calc(${x}px - 50%), ${y - h * 1.02 - shoutEl.offsetHeight}px) scale(${0.6 + pop * 0.4}) rotate(-3deg)`;
-  }
-  return true;
+// Menu speech bubble ("RE-EXAM!") pops above the character's head.
+const shoutEl = $('shout'), _feet = new THREE.Vector3(), _top = new THREE.Vector3();
+function placeShout(H, side) {
+  shoutEl.hidden = !(shoutT > 0); if (shoutT <= 0) return;
+  _feet.set(side, 0, 0).project(camera); _top.set(side, H, 0).project(camera);
+  const x = (_feet.x + 1) / 2 * innerWidth, y = (1 - _top.y) / 2 * innerHeight, pop = Math.min(1, (2.4 - shoutT) * 6);   // spring in
+  shoutEl.style.transform = `translate(calc(${x}px - 50%), ${y - 8 - shoutEl.offsetHeight}px) scale(${0.6 + pop * 0.4}) rotate(-3deg)`;
 }
 let shoutT = 0;
 function updateCharacters(dt) {
   shoutT -= dt;
   const r = player.rig, playing = state === 'PLAYING' || state === 'CAUGHT';
-  if (state === 'MENU' && showIdlePic(CHARS[selIdx].id, r.H || 2)) {
-    r.root.visible = false; r.picHidden = true; phone.visible = false;
-    if (r.placard) r.placard.visible = false;
-    return;
-  }
-  idlePic.hidden = shoutEl.hidden = true;
-  if (r.picHidden) { r.root.visible = true; r.picHidden = false; }
+  shoutEl.hidden = true;
   if (state === 'MENU') {
     menuIdle += dt; const lazy = menuIdle > 10;   // leave him alone and he lies down to scroll
-    runPhase += dt * 6; animate(r, 'idle', dt, lazy ? 0.04 : 0.6, runPhase);
+    runPhase += dt * 6; animate(r, 'stand', dt, 0.6, runPhase);
+    placeShout(r.H || 2, r.placard?.visible ? 0.6 : 0);   // beside Guddu's placard, not over it
     r.root.position.set(0, 0, 0); r.root.scale.setScalar(r.baseScale);
     if (lazy) {
       if (!phone.visible) { phone.visible = true; pop('11 HRS/DAY 📱', 0, 1.6, 0, 'teal'); $('hint').textContent = '💡 ' + TIPS[3]; }
       r.root.rotation.y = 1.1; r.body.rotation.x = -Math.PI / 2; r.body.position.y = 0.3;
       phone.position.set(-0.6, 0.85, -0.3); phone.rotation.set(-1.2, 1.1, 0);   // held above his face
-    } else { phone.visible = false; r.root.rotation.y += dt * 0.7; }
+    } else { phone.visible = false; r.root.rotation.y = Math.sin(t * 0.6) * 0.45; }   // face the camera, sway a little
     jiggleEyes(r, dt, Math.sin(t * 2) * 0.2, Math.cos(runPhase) * 0.15);
     return;
   }

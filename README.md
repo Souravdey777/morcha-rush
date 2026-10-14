@@ -85,7 +85,7 @@ Then open http://localhost:8765. Opening `index.html` directly from disk also wo
   ```bash
   tools/optimize-models.sh && python3 tools/pack-models.py
   ```
-- **Menu art:** the start screen shows each character's concept art as a cutout (in [`art/`](art)). The 3D model takes over when the run starts.
+- **Menu:** the start screen shows the selected runner's 3D model in a standing pose.
 - **Fallbacks:** if a model fails to load, the game builds that character from simple shapes instead.
 - **Saves:** your progress is saved in the browser with `localStorage`.
 - **Teary screen:** clipping an onion cart blurs the screen with a line from [`tear-lines.js`](tear-lines.js): the runner's own pool, a shared pool, and a rare Daroga Ji line, shuffled so nothing repeats too soon. Check the picker with `node tools/test-tear-lines.mjs`. On localhost (or with `?debug` in the URL), press **T** to trigger it.
@@ -98,7 +98,7 @@ models-web/             compressed GLB models the website loads (generated)
 models-list.js          model names (generated)
 models.js               base64 models for file:// (generated)
 models/                 source GLB models + notes
-art/                    menu cutouts of each character
+art/                    character cutouts (no longer used by the game)
 brand/                  logo and app icons
 concepts/               concept art and turnaround sheets
 screenshots/            README images
