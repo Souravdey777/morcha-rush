@@ -160,14 +160,14 @@ h2{font-size:clamp(40px,11vw,64px);color:var(--pink);-webkit-text-stroke:2px var
 @keyframes toast{0%{opacity:0;transform:translate(-50%,-20px)}10%,85%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,-10px)}}
 #tears{position:absolute;inset:0;pointer-events:none;--tb:4px;--read:4s}
 #tears::before{content:"";position:absolute;inset:0;opacity:0;background:radial-gradient(ellipse at center,rgba(150,200,255,0) 45%,rgba(90,140,255,.38) 100%)}   /* vignette */
-#tears.go{animation:tearBlur 2s linear}
-#tears.go::before{animation:tearVignette 2s linear}
-@keyframes tearBlur{   /* 0 → max in 150 ms, hold, ease out over the last 400 ms */
-  0%{-webkit-backdrop-filter:blur(0);backdrop-filter:blur(0)}
-  7.5%{-webkit-backdrop-filter:blur(var(--tb));backdrop-filter:blur(var(--tb))}
+#tears.go{animation:tearBlur 3s linear}
+#tears.go::before{animation:tearVignette 3s linear}
+@keyframes tearBlur{   /* eyes well up slowly over ~1 s, hold, ease out over the last 600 ms */
+  0%{-webkit-backdrop-filter:blur(0);backdrop-filter:blur(0);animation-timing-function:ease-in}
+  35%{-webkit-backdrop-filter:blur(var(--tb));backdrop-filter:blur(var(--tb))}
   80%{-webkit-backdrop-filter:blur(var(--tb));backdrop-filter:blur(var(--tb));animation-timing-function:ease-out}
   100%{-webkit-backdrop-filter:blur(0);backdrop-filter:blur(0)}}
-@keyframes tearVignette{0%{opacity:0}7.5%,80%{opacity:1;animation-timing-function:ease-out}100%{opacity:0}}
+@keyframes tearVignette{0%{opacity:0;animation-timing-function:ease-in}35%,80%{opacity:1;animation-timing-function:ease-out}100%{opacity:0}}
 #tears .bubble{position:absolute;left:50%;top:calc(max(10px,env(safe-area-inset-top)) + 92px);transform:translateX(-50%);
   width:max-content;max-width:min(86vw,520px);text-align:center;font:800 clamp(17px,4.6vw,24px)/1.2 "Baloo 2","Arial Black",sans-serif;
   color:var(--plum);background:var(--cream);border:3px solid var(--pink);border-radius:18px;padding:8px 16px;box-shadow:0 4px 0 var(--pink);opacity:0}
@@ -1118,7 +1118,7 @@ for (const type of Object.keys(OB)) {
     if (type === 'pothole') { const s = signMesh(TEX.wip, 0.62, 0.42, true); s.position.set(1.09, 0.88, 0); g.add(s); }
     if (type === 'station') { const s = signMesh(TEX.station, 2.2, 0.66); s.position.set(0, 3.25, 0.29); g.add(s); }
     if (type === 'onion') { g.add(new THREE.Mesh(GEO.onions, VC)); if (GLB['powerup-jugaad-thela']) { g.children[0].visible = false; const c = GLB['powerup-jugaad-thela'].scene.clone(true); c.scale.setScalar(1.7); c.rotation.y = Math.PI / 2; g.add(c); } }
-    if (type === 'convoy') {
+      if (type === 'convoy') {
       g.add(M(G.box, LIGHT.r, -0.25, 1.48, -0.6, 0.4, 0.14, 0.22), M(G.box, LIGHT.b, 0.25, 1.48, -0.6, 0.4, 0.14, 0.22));
       const s = signMesh(TEX.route, 1.9, 0.5); s.position.set(0, 0.75, 2.1); g.add(s);
     }
@@ -1791,7 +1791,12 @@ function hit(ob) {
   if (player.invulnT > 0) return;
   ob.hit = true;
   if (ob.type === 'convoy') knock(ob, null);         // never leave the player stuck inside a car
-  if (ob.def.tearTrigger) { tears(); knock(ob, null); return; }   // onion cart: just tears, no stumble, Daroga Ji stays put
+  if (ob.def.tearTrigger) {   // onion cart: just tears, no stumble, Daroga Ji stays put
+    tears(); knock(ob, null); shakeT = 0.15; SFX.smash();
+    burst(ob.obj.position.x, 1, ob.z, 22, ['#b03a6a', '#d9739a', '#f3d9c4'], { speed: 7, up: 7, size: 0.22, life: 1.2 });   // onions everywhere
+    burst(player.x, 1.7, 0, 12, ['#7fd3ff', '#bfeaff'], { speed: 1.5, up: 2.5, size: 0.08, life: 0.9, grav: 9 });   // tears
+    pop(pick(['PYAAZ!', 'AANSU!', '₹120/kg?!', 'SNIFF!']), player.x, 2.2, 0, 'pink'); return;
+  }
   if (player.thela) {
     player.thela = false; player.invulnT = CONFIG.INVULN_AFTER_HIT; shakeT = 0.3; SFX.smash();
     burst(player.x, 0.5, 0, 16, ['#b07a45', '#8a5a2b', COL.pink], { speed: 6, up: 5, size: 0.2, life: 0.9 });
