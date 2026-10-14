@@ -1532,6 +1532,7 @@ function hit(ob) {
   if (player.invulnT > 0) return;
   ob.hit = true;
   if (ob.type === 'convoy') knock(ob, null);         // never leave the player stuck inside a car
+  if (ob.def.tearTrigger) { tears(); knock(ob, null); return; }   // onion cart: just tears, no stumble, Daroga Ji stays put
   if (player.thela) {
     player.thela = false; player.invulnT = CONFIG.INVULN_AFTER_HIT; shakeT = 0.3; SFX.smash();
     burst(player.x, 0.5, 0, 16, ['#b07a45', '#8a5a2b', COL.pink], { speed: 6, up: 5, size: 0.2, life: 0.9 });
@@ -1542,7 +1543,6 @@ function hit(ob) {
     burst(player.x, 0.5, 0, 16, ['#6b3b1f', '#c8a2e8', '#ffffff'], { speed: 6, up: 5, size: 0.2, life: 0.9 });
     pop('UNBOTHERED!', player.x, 2, 0, 'teal'); return;
   }
-  if (ob.def.tearTrigger) tears();
   if (player.stumbleT > 0 && power.thali <= 0) { caught(); return; }
   if (player.stumbleT > 0) { player.invulnT = CONFIG.INVULN_AFTER_HIT; shakeT = 0.3; SFX.hit(); pop('OOF!', player.x, 2.2, 0, 'white'); return; }   // thali-stunned: no catch
   player.stumbleT = CONFIG.STUMBLE_RECOVER; player.invulnT = CONFIG.INVULN_AFTER_HIT; shakeT = 0.4;
