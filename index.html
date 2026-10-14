@@ -1515,6 +1515,7 @@ const tearPicker = makeTearPicker(window.TEAR_LINES, {
 });
 document.documentElement.classList.toggle('reduced-motion', CONFIG.REDUCED_MOTION);
 function tears() {
+  if (bijliT > 0) return;   // no tears in the dark
   const el = $('tears');
   const line = tearPicker.pick(CHARS[selIdx].id);
   el.querySelector('.bubble').textContent = line;
