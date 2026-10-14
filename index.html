@@ -11,6 +11,13 @@
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@800&display=swap">
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+<!-- fetch the engine alongside the page instead of one import at a time once the game script runs -->
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js">
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js">
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/utils/BufferGeometryUtils.js">
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/meshopt_decoder.module.js">
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/utils/SkeletonUtils.js">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <style>
 :root{--saffron:#ff8a1f;--pink:#ff3d7f;--teal:#13b5a6;--marigold:#ffd23f;--plum:#2a1b3d;--cream:#fff8ec}
@@ -175,6 +182,9 @@ h2{font-size:clamp(40px,11vw,64px);color:var(--pink);-webkit-text-stroke:2px var
 #bijli{position:absolute;left:50%;top:22%;transform:translateX(-50%);background:#1d1630;color:var(--marigold);border:3px solid var(--marigold);border-radius:14px;
   padding:6px 16px;font-family:"Arial Black",Impact,sans-serif;font-size:clamp(18px,5vw,26px);animation:blink .4s steps(2) infinite;white-space:nowrap}
 #nogl{position:absolute;inset:0;display:grid;place-items:center;padding:24px;background:#ffc9a3;pointer-events:auto}
+#loadTrack{height:12px;margin:14px auto 4px;width:min(260px,70vw);border:3px solid var(--plum);border-radius:99px;background:var(--cream);overflow:hidden}
+#loadBar{height:100%;width:4%;background:var(--saffron);border-radius:99px;transition:width .3s}
+#loading{transition:opacity .3s}#loading.gone{opacity:0}
 </style>
 </head>
 <body>
@@ -270,14 +280,26 @@ h2{font-size:clamp(40px,11vw,64px);color:var(--pink);-webkit-text-stroke:2px var
   </div>
   </div>
 
-  <div id="loading" class="panel" style="justify-content:center;background:#ffc9a3;pointer-events:auto"><div class="card"><h2 style="font-size:36px">CHALO!</h2><p class="quip" id="loadMsg">Loading the march against corruption…</p><p class="sub" id="loadTip"></p></div></div>
+  <div id="loading" class="panel" style="justify-content:center;background:#ffc9a3;pointer-events:auto"><div class="card"><h2 style="font-size:36px">CHALO!</h2><p class="quip" id="loadMsg">Loading the march against corruption…</p><div id="loadTrack"><div id="loadBar"></div></div><p class="sub" id="loadTip"></p></div></div>
   <div id="nogl" class="hidden"><div class="card"><h2 style="font-size:32px">OYE!</h2><p class="quip">Your browser couldn't start WebGL, so the 3D march can't load here. Try a recent Chrome, Safari or Firefox.</p></div></div>
 </div>
 
 <script src="tear-lines.js"></script>
 <script src="models-list.js"></script>  <!-- Higgsfield GLB models: see tools/pack-models.py -->
+<script>
+// Start downloading every model right away, while Three.js is still on its way from the CDN; the game script picks
+// these up. The bar covers the downloads, the game script fills the last stretch once it has built the models.
+(function () {
+  var names = window.MORCHA_MODEL_NAMES || [], done = 0, bar = document.getElementById('loadBar');
+  if (location.protocol === 'file:' || !names.length) return;
+  window.MORCHA_FETCH = {};
+  names.forEach(function (n) {
+    window.MORCHA_FETCH[n] = fetch('models-web/' + n + '.glb').then(function (r) { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); });
+    window.MORCHA_FETCH[n].catch(function () {}).then(function () { bar.style.width = (++done / names.length * 90) + '%'; });
+  });
+})();
+</script>
 <script>if (location.protocol === 'file:') document.write('<script src="models.js"><\/script>');</script>
-<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 <script type="module">
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -403,9 +425,8 @@ let sceneryLoaded, gameLoaded;
   const packed = window.MORCHA_MODELS, names = window.MORCHA_MODEL_NAMES || [], loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
   const load = list => Promise.all(list.map(async name => {
     try {
-      const res = await fetch(packed ? 'data:model/gltf-binary;base64,' + packed[name] : 'models-web/' + name + '.glb');
-      if (!res.ok) throw new Error(res.status);
-      const buf = await res.arrayBuffer();
+      const buf = await (window.MORCHA_FETCH?.[name] || fetch(packed ? 'data:model/gltf-binary;base64,' + packed[name] : 'models-web/' + name + '.glb')
+        .then(res => { if (!res.ok) throw new Error(res.status); return res.arrayBuffer(); }));
       GLB[name] = await loader.parseAsync(buf, '');
       GLB[name].scene.traverse(o => { if (o.isMesh) { for (const m of [].concat(o.material)) m.metalness = 0; } });   // no env map: metal reads as black
     } catch (e) { console.warn('Model failed to load, using fallback:', name, e); }
@@ -2237,8 +2258,14 @@ prewarm();
 selectChar(selIdx);
 inspector.root.visible = false;
 show('menu');
-$('loading').remove();
-if (!save.seenHelp) { save.seenHelp = true; persist(); openPanel('helpPanel'); }   // first visit: explain the game once
+// The loading card stays up until the models are in and built, so the menu opens on the real street and runner instead of
+// stand-ins that pop. On a slow line, open the menu anyway after a while: the stand-ins cover it and PLAY waits for the models.
+function reveal() {
+  if (!$('loading')) return;
+  $('loadBar').style.width = '100%'; $('loading').classList.add('gone'); setTimeout(() => $('loading').remove(), 300);
+  if (!save.seenHelp) { save.seenHelp = true; persist(); openPanel('helpPanel'); }   // first visit: explain the game once
+}
+setTimeout(reveal, 12000);
 
 gameLoaded.then(() => {
   for (const c of CHARS) {
@@ -2254,6 +2281,7 @@ gameLoaded.then(() => {
   prewarm(); modelsReady = true;
   selectChar(selIdx);
   if (pendingStart) startGame();
+  reveal();
 });
 
 const stats = { frames: 0, ms: 0 };
