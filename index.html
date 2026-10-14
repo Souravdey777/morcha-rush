@@ -1118,7 +1118,7 @@ for (const type of Object.keys(OB)) {
     if (type === 'pothole') { const s = signMesh(TEX.wip, 0.62, 0.42, true); s.position.set(1.09, 0.88, 0); g.add(s); }
     if (type === 'station') { const s = signMesh(TEX.station, 2.2, 0.66); s.position.set(0, 3.25, 0.29); g.add(s); }
     if (type === 'onion') { g.add(new THREE.Mesh(GEO.onions, VC)); if (GLB['powerup-jugaad-thela']) { g.children[0].visible = false; const c = GLB['powerup-jugaad-thela'].scene.clone(true); c.scale.setScalar(1.7); c.rotation.y = Math.PI / 2; g.add(c); } }
-      if (type === 'convoy') {
+    if (type === 'convoy') {
       g.add(M(G.box, LIGHT.r, -0.25, 1.48, -0.6, 0.4, 0.14, 0.22), M(G.box, LIGHT.b, 0.25, 1.48, -0.6, 0.4, 0.14, 0.22));
       const s = signMesh(TEX.route, 1.9, 0.5); s.position.set(0, 0.75, 2.1); g.add(s);
     }
