@@ -9,6 +9,8 @@
 <link rel="apple-touch-icon" href="brand/apple-touch-icon.png">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@800&display=swap">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <style>
 :root{--saffron:#ff8a1f;--pink:#ff3d7f;--teal:#13b5a6;--marigold:#ffd23f;--plum:#2a1b3d;--cream:#fff8ec}
@@ -135,11 +137,27 @@ h2{font-size:clamp(40px,11vw,64px);color:var(--pink);-webkit-text-stroke:2px var
   font-weight:800;font-size:15px;box-shadow:0 4px 0 #000;white-space:nowrap;z-index:5}
 #toast.go{animation:toast 2.8s ease forwards}
 @keyframes toast{0%{opacity:0;transform:translate(-50%,-20px)}10%,85%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,-10px)}}
-#tears{position:absolute;inset:0;display:grid;place-items:center;opacity:0;background:radial-gradient(circle,rgba(150,200,255,.05),rgba(110,160,255,.35));
-  -webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
-#tears span{font-family:"Arial Black",Impact,sans-serif;font-size:clamp(18px,5vw,30px);color:#fff;-webkit-text-stroke:2px var(--plum);paint-order:stroke fill}
-#tears.go{animation:tears 1.5s ease-out}
-@keyframes tears{0%{opacity:0}15%,60%{opacity:1}100%{opacity:0}}
+#tears{position:absolute;inset:0;pointer-events:none;--tb:4px;--read:4s}
+#tears::before{content:"";position:absolute;inset:0;opacity:0;background:radial-gradient(ellipse at center,rgba(150,200,255,0) 45%,rgba(90,140,255,.38) 100%)}   /* vignette */
+#tears.go{animation:tearBlur 2s linear}
+#tears.go::before{animation:tearVignette 2s linear}
+@keyframes tearBlur{   /* 0 → max in 150 ms, hold, ease out over the last 400 ms */
+  0%{-webkit-backdrop-filter:blur(0);backdrop-filter:blur(0)}
+  7.5%{-webkit-backdrop-filter:blur(var(--tb));backdrop-filter:blur(var(--tb))}
+  80%{-webkit-backdrop-filter:blur(var(--tb));backdrop-filter:blur(var(--tb));animation-timing-function:ease-out}
+  100%{-webkit-backdrop-filter:blur(0);backdrop-filter:blur(0)}}
+@keyframes tearVignette{0%{opacity:0}7.5%,80%{opacity:1;animation-timing-function:ease-out}100%{opacity:0}}
+#tears .bubble{position:absolute;left:50%;top:calc(max(10px,env(safe-area-inset-top)) + 92px);transform:translateX(-50%);
+  width:max-content;max-width:min(86vw,520px);text-align:center;font:800 clamp(17px,4.6vw,24px)/1.2 "Baloo 2","Arial Black",sans-serif;
+  color:var(--plum);background:var(--cream);border:3px solid var(--pink);border-radius:18px;padding:8px 16px;box-shadow:0 4px 0 var(--pink);opacity:0}
+#tears .bubble::after{content:"";position:absolute;left:50%;bottom:-13px;margin-left:-10px;border:10px solid transparent;border-top-color:var(--pink);border-bottom:0}
+#tears.go .bubble{animation:bubblePop .35s cubic-bezier(.3,1.6,.5,1),bubbleLife var(--read) linear forwards}   /* stays up long enough to read */
+@keyframes bubbleLife{0%{opacity:0}4%,88%{opacity:1}100%{opacity:0}}
+@keyframes bubblePop{0%{transform:translateX(-50%) scale(.4)}100%{transform:translateX(-50%) scale(1)}}
+#c.wobble{animation:tearWobble 1.5s ease-in-out}
+@keyframes tearWobble{0%,100%{transform:none}20%{transform:rotate(.7deg) scale(1.03)}40%{transform:rotate(-.7deg) scale(1.03)}60%{transform:rotate(.5deg) scale(1.03)}80%{transform:rotate(-.3deg) scale(1.02)}}
+.reduced-motion #tears{--tb:2px}
+.reduced-motion #tears.go .bubble{animation:bubbleLife var(--read) linear forwards}
 #bijli{position:absolute;left:50%;top:22%;transform:translateX(-50%);background:#1d1630;color:var(--marigold);border:3px solid var(--marigold);border-radius:14px;
   padding:6px 16px;font-family:"Arial Black",Impact,sans-serif;font-size:clamp(18px,5vw,26px);animation:blink .4s steps(2) infinite;white-space:nowrap}
 #nogl{position:absolute;inset:0;display:grid;place-items:center;padding:24px;background:#ffc9a3;pointer-events:auto}
@@ -153,7 +171,7 @@ h2{font-size:clamp(40px,11vw,64px);color:var(--pink);-webkit-text-stroke:2px var
 <div id="ui">
   <div id="pops"></div>
   <div id="flash"></div>
-  <div id="tears"><span>…thinking about your ex?</span></div>
+  <div id="tears"><div class="bubble"></div></div>
   <div id="bijli" class="hidden">⚡ BIJLI GAYI! ⚡</div>
   <div id="toast" class="hidden"></div>
   <div id="warn" class="hidden">🚨 VIP MOVEMENT 🚨<small id="warnLane"></small></div>
@@ -241,6 +259,7 @@ h2{font-size:clamp(40px,11vw,64px);color:var(--pink);-webkit-text-stroke:2px var
   <div id="nogl" class="hidden"><div class="card"><h2 style="font-size:32px">OYE!</h2><p class="quip">Your browser couldn't start WebGL, so the 3D march can't load here. Try a recent Chrome, Safari or Firefox.</p></div></div>
 </div>
 
+<script src="tear-lines.js"></script>
 <script src="models-list.js"></script>  <!-- Higgsfield GLB models: see tools/pack-models.py -->
 <script>if (location.protocol === 'file:') document.write('<script src="models.js"><\/script>');</script>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
@@ -297,11 +316,13 @@ const CONFIG = {
   DHOL_SHOCK_RANGE: 7,      // Dhol Bro's landing shockwave reach (units ahead)
   INTERN_BONUS: 25,         // Camera Intern near-miss bonus
   UNLOCK_COST: { guddu: 0, dadi: 500, dhol: 1000, intern: 2000, cocky: 3000 },
+  REDUCED_MOTION: matchMedia('(prefers-reduced-motion: reduce)').matches,   // teary screen: no wobble, light blur
   STREET_DENSITY: matchMedia('(pointer:coarse)').matches ? 0.65 : 1,   // sidewalk props/walkers; lower = faster on phones
 };
 
 /* ===================================================================== */
 window.__mrBooted = true;
+const DEBUG = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) || new URLSearchParams(location.search).has('debug');
 const $ = id => document.getElementById(id);
 const COL = { saffron:'#ff8a1f', pink:'#ff3d7f', teal:'#13b5a6', marigold:'#ffd23f', plum:'#2a1b3d', cream:'#fff8ec' };
 const DARK = '#1a1024';
@@ -875,7 +896,7 @@ const OB = {
   pothole:   { y0: -1, y1: 0.25, hz: 0.85, geo: 'pothole' },
   convoy:    { y0: 0, y1: 2.0, hz: 2.15, geo: 'car' },
   station:   { y0: 0, y1: 3.6, hz: 0.3, geo: 'station' },     // lane blocker: too tall to jump, no gap to slide
-  onion:     { y0: 0, y1: 1.0, hz: 0.6, geo: 'onionCart' },
+  onion:     { y0: 0, y1: 1.0, hz: 0.6, geo: 'onionCart', tearTrigger: true },   // tearTrigger: clipping it plays the teary screen
 };
 
 // Higgsfield obstacle models: rotation to face the runner + per-axis scale to fit a lane.
@@ -1479,7 +1500,20 @@ function escaped() {   // shook the Inspector off (recovered, or stunned him wit
   player.stumbleT = 0; save.stats.escapes++; checkAch();
   pop(pick(['PHEW!', 'CARDIO!', 'NOT FOR SALE!']), player.x, 2.2, 0, 'teal');
 }
-function tears() { const el = $('tears'); el.classList.remove('go'); void el.offsetWidth; el.classList.add('go'); }
+// Teary screen: a visual gag (gameplay keeps running). Lines + shuffle-bag picker live in tear-lines.js.
+const tearPicker = makeTearPicker(window.TEAR_LINES, {
+  load: () => { try { return JSON.parse(localStorage.getItem('morchaRush.tears')); } catch (e) { return null; } },
+  save: st => { try { localStorage.setItem('morchaRush.tears', JSON.stringify(st)); } catch (e) {} },
+});
+document.documentElement.classList.toggle('reduced-motion', CONFIG.REDUCED_MOTION);
+function tears() {
+  const el = $('tears');
+  const line = tearPicker.pick(CHARS[selIdx].id);
+  el.querySelector('.bubble').textContent = line;
+  el.style.setProperty('--read', clamp(1.2 + line.length / 16, 3, 6) + 's');   // ~16 characters a second, 3-6 s
+  for (const t of [el, CONFIG.REDUCED_MOTION ? null : $('c')]) if (t) { t.classList.remove('go', 'wobble'); void t.offsetWidth; }
+  el.classList.add('go'); if (!CONFIG.REDUCED_MOTION) $('c').classList.add('wobble');
+}
 function knock(ob, text) {          // send an obstacle flying, cartoon style (nobody gets hurt)
   ob.dead = true; ob.vy = 7; ob.vx = (ob.lane === 0 ? (Math.random() < 0.5 ? -1 : 1) : Math.sign(ob.lane)) * 6; ob.spin = rand(-1, 1) || 0.5;
   burst(ob.obj.position.x, 1, ob.z, 14, [COL.pink, COL.teal, COL.marigold, COL.saffron], { speed: 6, up: 5, size: 0.14, life: 0.8 });
@@ -1502,7 +1536,7 @@ function hit(ob) {
     burst(player.x, 0.5, 0, 16, ['#6b3b1f', '#c8a2e8', '#ffffff'], { speed: 6, up: 5, size: 0.2, life: 0.9 });
     pop('UNBOTHERED!', player.x, 2, 0, 'teal'); return;
   }
-  if (ob.type === 'onion') tears();
+  if (ob.def.tearTrigger) tears();
   if (player.stumbleT > 0 && power.thali <= 0) { caught(); return; }
   if (player.stumbleT > 0) { player.invulnT = CONFIG.INVULN_AFTER_HIT; shakeT = 0.3; SFX.hit(); pop('OOF!', player.x, 2.2, 0, 'white'); return; }   // thali-stunned: no catch
   player.stumbleT = CONFIG.STUMBLE_RECOVER; player.invulnT = CONFIG.INVULN_AFTER_HIT; shakeT = 0.4;
@@ -1648,7 +1682,7 @@ function updateEntities(dt) {
     if (!ob.passed && ob.z - ob.def.hz > 0.5) {
       ob.passed = true;
       const nearMiss = !ob.hit && (ob.lane === player.lane || (Math.abs(ob.lane - player.lane) === 1 && runT - player.lastSwitch < CONFIG.NEAR_MISS_LANE_TIME));
-      if (nearMiss && type === 'onion') tears();
+      if (nearMiss && ob.def.tearTrigger) tears();
       if (nearMiss && CHARS[selIdx].id === 'intern') { bonus += CONFIG.INTERN_BONUS; flash(); SFX.flash(); pop('LIKE & SHARE! +' + CONFIG.INTERN_BONUS, player.x, 2.4, -1, 'teal'); }
     }
   }
@@ -1937,6 +1971,7 @@ addEventListener('keydown', e => {
   if (actx && actx.state === 'suspended') actx.resume();
   menuIdle = 0;
   if (e.repeat && k !== ' ') return;
+  if ((k === 't' || k === 'T') && DEBUG) { tears(); return; }   // debug: trigger the teary screen
   if (state === 'MENU') {
     if (k === ' ' || k === 'Enter') playOrUnlock();
     else if (k === 'ArrowLeft' || k === 'a' || k === 'A') selectChar(selIdx - 1);

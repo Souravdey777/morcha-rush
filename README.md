@@ -88,6 +88,7 @@ Then open http://localhost:8765. Opening `index.html` directly from disk also wo
 - **Menu art:** the start screen shows each character's concept art as a cutout (in [`art/`](art)). The 3D model takes over when the run starts.
 - **Fallbacks:** if a model fails to load, the game builds that character from simple shapes instead.
 - **Saves:** your progress is saved in the browser with `localStorage`.
+- **Teary screen:** clipping an onion cart blurs the screen with a line from [`tear-lines.js`](tear-lines.js): the runner's own pool, a shared pool, and a rare Daroga Ji line, shuffled so nothing repeats too soon. Check the picker with `node tools/test-tear-lines.mjs`. On localhost (or with `?debug` in the URL), press **T** to trigger it.
 
 ## Project layout
 
