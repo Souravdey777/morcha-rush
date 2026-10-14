@@ -1694,7 +1694,6 @@ function updateEntities(dt) {
     if (!ob.passed && ob.z - ob.def.hz > 0.5) {
       ob.passed = true;
       const nearMiss = !ob.hit && (ob.lane === player.lane || (Math.abs(ob.lane - player.lane) === 1 && runT - player.lastSwitch < CONFIG.NEAR_MISS_LANE_TIME));
-      if (nearMiss && ob.def.tearTrigger && ob.lane !== player.lane) tears();   // last-second lane dodge only; jumping it cleanly is no tears
       if (nearMiss && CHARS[selIdx].id === 'intern') { bonus += CONFIG.INTERN_BONUS; flash(); SFX.flash(); pop('LIKE & SHARE! +' + CONFIG.INTERN_BONUS, player.x, 2.4, -1, 'teal'); }
     }
   }
