@@ -131,9 +131,6 @@ h2{font-size:clamp(40px,11vw,64px);color:var(--pink);-webkit-text-stroke:2px var
   100%{opacity:0;transform:translate(-50%,-150%) rotate(var(--r)) scale(1)}}
 .pop.coin{font-size:clamp(15px,4vw,22px);color:#fff}
 .pop.pink{color:var(--pink)}.pop.teal{color:var(--teal)}.pop.white{color:#fff}.pop.orange{color:var(--saffron)}
-#flash{position:absolute;inset:0;background:#fff;opacity:0}
-#flash.go{animation:fl .4s ease-out}
-@keyframes fl{0%{opacity:.85}100%{opacity:0}}
 #warn{position:absolute;left:50%;top:22%;transform:translateX(-50%);background:var(--saffron);color:var(--plum);
   border:3px solid var(--plum);border-radius:14px;padding:6px 14px;font-size:clamp(16px,4.6vw,24px);
   box-shadow:0 4px 0 var(--plum);animation:blink .3s steps(2) infinite;text-align:center;white-space:nowrap}
@@ -188,7 +185,6 @@ h2{font-size:clamp(40px,11vw,64px);color:var(--pink);-webkit-text-stroke:2px var
 
 <div id="ui">
   <div id="pops"></div>
-  <div id="flash"></div>
   <div id="tears"><div class="bubble"></div></div>
   <div id="bijli" class="hidden">⚡ BIJLI GAYI! ⚡</div>
   <div id="toast" class="hidden"></div>
@@ -791,10 +787,37 @@ function jiggleEyes(r, dt, tx, ty) {
 // Higgsfield character models (rigged, with a run clip). Heights are in world units; collision stays the same.
 const GLB_NAME = { guddu: 'guddu', dadi: 'dadi-ji', dhol: 'dhol-bro', intern: 'camera-intern', cocky: 'cocky', inspector: 'inspector' };
 const CHAR_HEIGHT = { guddu: 2.0, dadi: 1.75, dhol: 2.1, intern: 2.0, cocky: 1.9, inspector: 2.2 };
+// The Higgsfield textures paint the pupils off-centre (Guddu went wall-eyed), so each runner gets 3D eyeballs over the painted ones:
+// spheres fitted to the eye bulges, as [x, y, z, radius] in the Head bone's space. Cocky's eyes have no whites and stay painted.
+const EYEBALLS = {
+  guddu: [[-2.457, 7.592, 7.949, 4.676], [3.245, 8.081, 7.9, 4.314]],
+  dadi: [[-4.504, 9.196, 15.27, 5.625], [6.812, 10.6, 12.65, 5.754]],
+  dhol: [[-4.124, 12.49, 4.586, 3.846], [3.086, 12.84, 4.194, 3.827]],
+  intern: [[-4.488, 9.484, 9.701, 4.697], [3.785, 9.819, 9.961, 4.224]],
+  inspector: [[-5.4, 15.82, 15.22, 4.5], [5.6, 17.64, 13.83, 5.6]],
+};
+const EYE_GEO = new THREE.SphereGeometry(1.04, 24, 16), PUPIL_GEO = new THREE.SphereGeometry(0.4, 20, 12), SHINE_GEO = new THREE.SphereGeometry(0.1, 10, 8);
+const EYE_MAT = new THREE.MeshLambertMaterial({ color: '#fbf7f2' }), PUPIL_MAT = new THREE.MeshBasicMaterial({ color: '#17121c' }), SHINE_MAT = new THREE.MeshBasicMaterial({ color: '#ffffff' });
+function addEyeballs(model, id, pupils) {
+  const head = model.getObjectByName('Head'); if (!head || !EYEBALLS[id]) return;
+  if (head.userData.pupils) { pupils.push(...head.userData.pupils); return; }   // same GLB scene built again
+  head.userData.pupils = pupils; model.updateMatrixWorld(true);
+  const q = head.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(model.getWorldQuaternion(new THREE.Quaternion()));   // bind pose: look along the model's forward
+  for (const [x, y, z, R] of EYEBALLS[id]) {
+    const eye = new THREE.Group(); head.add(eye);   // unit eyeball: radius 1 inside the group
+    eye.position.set(x, y, z); eye.quaternion.copy(q); eye.scale.setScalar(R);
+    const pupil = new THREE.Mesh(PUPIL_GEO, PUPIL_MAT), shine = new THREE.Mesh(SHINE_GEO, SHINE_MAT);
+    pupil.scale.z = 0.35; pupil.position.z = 0.95; pupil.userData.base = pupil.position.clone();
+    shine.position.set(-0.14, 0.14, 0.4); shine.scale.z = 2.5; pupil.add(shine);
+    eye.add(new THREE.Mesh(EYE_GEO, EYE_MAT), pupil); pupils.push(pupil);
+  }
+}
 function buildGlbCharacter(id) {
   const g = GLB[GLB_NAME[id]]; if (!g || !g.animations.length) return null;
   const clip = g.animations[0];
   const model = g.scene, root = new THREE.Group(), body = new THREE.Group(); root.add(body); body.add(model);
+  const rest = []; model.traverse(o => { if (o.isBone) rest.push([o, o.quaternion.clone()]); });   // bind pose, before the run clip takes over: POSES build on it
+  const pupils = []; addEyeballs(model, id, pupils);
   const mixer = new THREE.AnimationMixer(model), action = mixer.clipAction(clip); action.play(); mixer.update(0.12);
   model.updateMatrixWorld(true);
   const box = new THREE.Box3();
@@ -805,7 +828,7 @@ function buildGlbCharacter(id) {
   const H = CHAR_HEIGHT[id], s = H / (box.max.y - box.min.y);
   model.scale.setScalar(s); model.position.y = -box.min.y * s - H / 2;  // body pivots at mid-height so flips/slides rotate nicely
   body.position.y = H / 2;
-  return { root, body, model, mixer, action, glb: true, H, baseScale: 1, hand: model.getObjectByName('RightHand'), legs: [], arms: [], pupils: [], eye: new THREE.Vector2(), eyeV: new THREE.Vector2() };
+  return { root, body, model, mixer, action, glb: true, H, baseScale: 1, rest, y0: model.position.y, poses: {}, poseW: 0, pose: null, hand: model.getObjectByName('RightHand'), legs: [], arms: [], pupils, eye: new THREE.Vector2(), eyeV: new THREE.Vector2() };
 }
 const rigs = {};
 for (const c of CHARS) { rigs[c.id] = buildGlbCharacter(c.id) || buildCharacter(c.id); rigs[c.id].root.visible = false; scene.add(rigs[c.id].root); }
@@ -818,13 +841,47 @@ function addPlacard() {   // the Higgsfield Guddu lost his placard, so he gets o
   rigs.guddu.placard = pl; rigs.guddu.body.add(pl);   // rides in his backpack, so it flips and leans with him
 }
 addPlacard();
-// Drive a character: Higgsfield models play their run clip; code-built rigs use procedural poses.
+// The Higgsfield models only ship a run clip, so these poses are hand-built on their shared 24-bone skeleton:
+// bone turns in degrees about the character's own axes (x right, y up, z forward), applied over the bind pose.
+// `ground` bones are then dropped to the bind pose's feet + lift × height.
+const X = [1, 0, 0], Z = [0, 0, 1];
+const POSES = {
+  slide: { turns: [['Hips', X, -55], ['LeftUpLeg', X, -12], ['LeftLeg', X, 8], ['RightUpLeg', X, 20], ['RightLeg', X, 100], ['Spine02', X, 12], ['Head', X, 25],
+    ['LeftArm', X, 35], ['LeftArm', Z, -15], ['RightArm', Z, -70], ['RightForeArm', Z, -30]],   // baseball slide: lean back, lead leg out, arm out for balance
+    ground: ['Hips', 'LeftFoot', 'RightFoot', 'LeftToeBase', 'RightToeBase', 'RightLeg'], lift: -0.1 },
+  caught: { turns: [['LeftArm', Z, 125], ['RightArm', Z, -125], ['LeftForeArm', Z, 40], ['RightForeArm', Z, -40], ['Head', X, 12], ['Spine02', X, 6]] },   // hands up
+  sit: { turns: [['LeftUpLeg', X, -80], ['RightUpLeg', X, -80], ['LeftLeg', X, 70], ['RightLeg', X, 70], ['LeftArm', Z, -20], ['RightArm', Z, 20],
+    ['LeftArm', X, -30], ['RightArm', X, -30], ['Spine02', X, 10]], ground: ['Hips'], lift: 0.11 },   // riding the jugaad thela
+};
+const _pq = new THREE.Quaternion(), _mq = new THREE.Quaternion(), _aq = new THREE.Quaternion();
+function bakePose(r, name) {
+  const P = POSES[name], now = r.rest.map(([b]) => b.quaternion.clone());
+  const y = n => { const b = r.model.getObjectByName(n); r.model.updateMatrixWorld(true); return b ? r.body.worldToLocal(b.getWorldPosition(_v)).y : Infinity; };
+  for (const [b, q] of r.rest) b.quaternion.copy(q);
+  const feet = Math.min(y('LeftFoot'), y('RightFoot'));
+  r.model.getWorldQuaternion(_mq).invert();
+  for (const [n, axis, deg] of P.turns) {
+    const b = r.model.getObjectByName(n); if (!b) continue;
+    r.model.updateMatrixWorld(true); b.parent.getWorldQuaternion(_pq).premultiply(_mq);   // parent bone, in model space
+    _aq.setFromAxisAngle(_v.fromArray(axis), deg * Math.PI / 180);
+    b.quaternion.premultiply(_pq.clone().invert().multiply(_aq).multiply(_pq));
+  }
+  const dy = P.ground ? feet + P.lift * r.H - Math.min(...P.ground.map(y)) : 0;
+  const q = r.rest.map(([b]) => [b, b.quaternion.clone()]);
+  r.rest.forEach(([b], i) => b.quaternion.copy(now[i]));
+  return { q, dy };
+}
+// Drive a character: Higgsfield models play their run clip and blend into POSES; code-built rigs use procedural poses.
 function animate(r, mode, dt, rate, phase) {
-  if (!r.glb) { poseRig(r, phase, mode); return; }
+  if (!r.glb) { poseRig(r, phase, mode === 'sit' || mode === 'caught' ? 'run' : mode); return; }
   r.action.timeScale = rate; r.mixer.update(dt);
+  if (POSES[mode]) r.pose = mode;
+  r.poseW = POSES[mode] ? Math.min(1, r.poseW + dt / 0.12) : Math.max(0, r.poseW - dt / 0.12);
+  const w = r.poseW * r.poseW * (3 - 2 * r.poseW), p = r.pose && w > 0 && (r.poses[r.pose] ||= bakePose(r, r.pose));
+  if (p) for (const [b, q] of p.q) b.quaternion.slerp(q, w);
+  r.model.position.y = r.y0 + (p ? p.dy * w : 0);
   r.body.rotation.set(0, 0, 0); r.body.position.y = r.H / 2;
   if (mode === 'jump') r.body.rotation.x = clamp((CONFIG.JUMP_VELOCITY - player.vy) / (2 * CONFIG.JUMP_VELOCITY), 0, 1) * Math.PI * 2;   // front flip
-  else if (mode === 'slide') { r.body.rotation.x = -1.3; r.body.position.y = 0.45; }
   else if (mode === 'idle') r.body.position.y = r.H / 2 + Math.abs(Math.sin(phase)) * 0.08;
   if (r.placard) {
     r.placard.visible = r.root.visible && mode !== 'slide';
@@ -1249,7 +1306,7 @@ const phone = new THREE.Group();   // for the 'chronically online' idle
 phone.add(M(G.box, '#1a1024', 0, 0, 0, 0.16, 0.3, 0.025), M(G.box, basicMat('#7fd6ff'), 0, 0.005, 0.014, 0.13, 0.25, 0.005)); phone.visible = false; scene.add(phone);
 
 /* =====================================================================
-   Comic text pops, screen flash, sound blips
+   Comic text pops, sound blips
    ===================================================================== */
 const popEls = [];
 for (let i = 0; i < 16; i++) { const d = document.createElement('div'); d.className = 'pop'; $('pops').appendChild(d); popEls.push(d); }
@@ -1263,7 +1320,6 @@ function pop(text, x, y, z, cls = '') {
   el.style.setProperty('--r', rand(-12, 12).toFixed(1) + 'deg');
   void el.offsetWidth; el.classList.add('go');
 }
-function flash() { const f = $('flash'); f.classList.remove('go'); void f.offsetWidth; f.classList.add('go'); }
 
 let actx = null;
 function beep(freq, dur = 0.1, type = 'square', vol = 0.06, slide = 0, delay = 0) {
@@ -1742,7 +1798,6 @@ function activatePower(type) {
   const label = { chai: 'CUTTING CHAI!', dhol: 'DHOL BEAT!', press: 'PRESS PASS!', thela: 'JUGAAD THELA!' }[type];
   pop(label, player.x, 2.3, -1, type === 'dhol' ? 'pink' : type === 'press' ? 'teal' : '');
   if (type === 'thela') player.thela = true; else power[type] = CONFIG.POWERUP_TIME[type];
-  if (type === 'press') flash();
   burst(player.x, 1.2, 0, 12, [POWER_TYPES[type].c, '#ffffff'], { speed: 4, up: 4, size: 0.12, life: 0.6 });
 }
 
@@ -1839,7 +1894,7 @@ function updateCharacters(dt) {
   }
   if (playing) {
     runPhase += dt * (7 + ws * 0.32) * (state === 'CAUGHT' ? 0.4 : 1);
-    const mode = !player.onGround ? 'jump' : player.slideT > 0 ? 'slide' : 'run';
+    const mode = state === 'CAUGHT' ? 'caught' : !player.onGround ? 'jump' : player.thela ? 'sit' : player.slideT > 0 ? 'slide' : 'run';
     animate(r, mode, dt, state === 'CAUGHT' ? 0.4 : clamp(ws / 16, 0.8, 1.8), runPhase);
     if (r.chappalArm && player.swingT > 0) r.chappalArm.rotation.set(-2.8 + (0.4 - player.swingT) * 6, 0, 0.3);
     const hover = player.thela ? 0.42 + Math.sin(t * 9) * 0.05 : 0;
