@@ -805,12 +805,54 @@ function addEyeballs(model, id, pupils) {
     eye.add(new THREE.Mesh(EYE_GEO, EYE_MAT), pupil); pupils.push(pupil);
   }
 }
+// Guddu's auto-rig bound his backpack to his right arm and thighs, so it warped with every stride. Rebind the bag (and the
+// book and poster roll in it) rigidly to the mid spine: picked by where it sits in the bind pose (behind his back) and its texture colour.
+function rebindBag(model) {
+  let mesh; model.traverse(o => { if (o.isSkinnedMesh && !mesh) mesh = o; });
+  const g = mesh?.geometry, map = mesh?.material.map?.image; if (!g || !map || g.userData.bagRebound) return;
+  g.userData.bagRebound = true;
+  const c = document.createElement('canvas'); c.width = map.width; c.height = map.height;
+  const cx = c.getContext('2d', { willReadFrequently: true }); cx.drawImage(map, 0, 0); const D = cx.getImageData(0, 0, c.width, c.height).data;
+  const pos = g.attributes.position, uv = g.attributes.uv, si = g.attributes.skinIndex, sw = g.attributes.skinWeight, ia = g.index.array;
+  const rgb = i => { const k = (Math.min(c.height - 1, uv.getY(i) * c.height | 0) * c.width + Math.min(c.width - 1, uv.getX(i) * c.width | 0)) * 4; return [D[k], D[k + 1], D[k + 2]]; };
+  const spine = mesh.skeleton.bones.findIndex(b => b.name === 'Spine01'), v = new THREE.Vector3(), bag = new Uint8Array(pos.count);
+  const take = i => { bag[i] = 1; si.setXYZW(i, spine, 0, 0, 0); sw.setXYZW(i, 1, 0, 0, 0); };
+  for (let i = 0; i < pos.count; i++) {   // the bag: behind his back, hips to shoulders
+    v.fromBufferAttribute(pos, i); if (!(v.z < -0.08 && v.y > -0.3 && v.y < 0.68 && v.x > -0.42 && v.x < 0.32)) continue;
+    const [R, G, B] = rgb(i), l = (R + G + B) / 3;
+    if (l < 45) continue;                                                        // hair
+    if (R > G && G > B && l > 100 && !(R > 200 && G > 190) && v.y > 0.42) continue;   // neck, ears
+    if (B > R + 30 && B > G && v.y > 0.35) continue;                             // hood
+    if (v.y > 0.48 && !(R > 170 && (G > 150 || R > G + 60))) continue;           // above the bag, only the poster roll
+    take(i);
+  }
+  const near = Array.from({ length: pos.count }, () => []);
+  for (let t = 0; t < ia.length; t += 3) for (let a = 0; a < 3; a++) near[ia[t + a]].push(ia[t + (a + 1) % 3], ia[t + (a + 2) % 3]);
+  const bagColour = ([R, G, B]) => { const l = (R + G + B) / 3; return (G > R + 15 && B > R) || (R > 170 && G > 120 && B < 110) || (l > 45 && l < 110 && Math.abs(G - B) < 30 && G >= R); };
+  for (let ring = 0; ring < 6; ring++) {   // grow to the bag's edges: side pockets, bottom seam, yellow trim
+    const add = [];
+    for (let i = 0; i < pos.count; i++) if (bag[i]) for (const j of near[i]) {
+      if (bag[j]) continue; v.fromBufferAttribute(pos, j);
+      if (v.z <= 0.02 && v.y >= -0.35 && v.y <= 0.5 && bagColour(rgb(j))) add.push(j);
+    }
+    add.forEach(take);
+  }
+  const arms = new Set(['RightShoulder', 'RightArm', 'LeftShoulder', 'LeftArm'].map(n => mesh.skeleton.bones.findIndex(b => b.name === n)));
+  for (let i = 0; i < pos.count; i++) {   // the book and poster sticking out of the top were rigged to his shoulders too (hair stays on Head)
+    if (bag[i]) continue; v.fromBufferAttribute(pos, i);
+    if (!(v.z < -0.05 && v.y > 0.38 && v.y < 0.8 && Math.abs(v.x) < 0.32)) continue;
+    let top = 0, bone = -1; for (let k = 0; k < 4; k++) if (sw.getComponent(i, k) > top) { top = sw.getComponent(i, k); bone = si.getComponent(i, k); }
+    if (arms.has(bone)) take(i);
+  }
+  si.needsUpdate = sw.needsUpdate = true;
+}
 function buildGlbCharacter(id) {
   const g = GLB[GLB_NAME[id]]; if (!g || !g.animations.length) return null;
   const clip = g.animations[0];
   const model = g.scene, root = new THREE.Group(), body = new THREE.Group(); root.add(body); body.add(model);
   const rest = []; model.traverse(o => { if (o.isBone) rest.push([o, o.quaternion.clone()]); });   // bind pose, before the run clip takes over: POSES build on it
   const pupils = []; addEyeballs(model, id, pupils);
+  if (id === 'guddu') rebindBag(model);
   const mixer = new THREE.AnimationMixer(model), action = mixer.clipAction(clip); action.play(); mixer.update(0.12);
   model.updateMatrixWorld(true);
   const box = new THREE.Box3();
@@ -821,7 +863,8 @@ function buildGlbCharacter(id) {
   const H = CHAR_HEIGHT[id], s = H / (box.max.y - box.min.y);
   model.scale.setScalar(s); model.position.y = -box.min.y * s - H / 2;  // body pivots at mid-height so flips/slides rotate nicely
   body.position.y = H / 2;
-  return { root, body, model, mixer, action, glb: true, H, baseScale: 1, rest, y0: model.position.y, poses: {}, poseW: 0, pose: null, hand: model.getObjectByName('RightHand'), legs: [], arms: [], pupils, eye: new THREE.Vector2(), eyeV: new THREE.Vector2() };
+  const lean = id === 'inspector' ? 0 : -42 * Math.PI / 180, spine = ['Spine02', 'Spine01'].map(n => model.getObjectByName(n)).filter(Boolean);
+  return { root, body, model, mixer, action, glb: true, H, baseScale: 1, rest, lean, spine, y0: model.position.y, poses: {}, poseW: 0, pose: null, hand: model.getObjectByName('RightHand'), legs: [], arms: [], pupils, eye: new THREE.Vector2(), eyeV: new THREE.Vector2() };
 }
 const rigs = {};
 for (const c of CHARS) { rigs[c.id] = buildGlbCharacter(c.id) || buildCharacter(c.id); rigs[c.id].root.visible = false; scene.add(rigs[c.id].root); }
@@ -910,6 +953,10 @@ function drumGrip(r) {
 function animate(r, mode, dt, rate, phase) {
   if (!r.glb) { poseRig(r, phase, mode === 'sit' || mode === 'caught' ? 'run' : mode === 'stand' ? 'idle' : mode); return; }
   r.action.timeScale = rate; r.mixer.update(dt);
+  if (r.lean) {   // the runners' shared run clip hunches ~50° forward, which buries Guddu's head behind his backpack; stand them up to ~25°
+    r.model.updateMatrixWorld(true); r.model.getWorldQuaternion(_mq).invert(); _aq.setFromAxisAngle(_v.set(1, 0, 0), r.lean / 2);
+    for (const b of r.spine) { b.parent.getWorldQuaternion(_pq).premultiply(_mq); b.quaternion.premultiply(_pq.clone().invert().multiply(_aq).multiply(_pq)); b.updateMatrixWorld(true); }
+  }
   if (POSES[mode]) r.pose = mode;
   r.poseW = POSES[mode] ? Math.min(1, r.poseW + dt / 0.12) : Math.max(0, r.poseW - dt / 0.12);
   const w = r.poseW * r.poseW * (3 - 2 * r.poseW), p = r.pose && w > 0 && (r.poses[r.pose] ||= bakePose(r, r.pose));
@@ -1212,13 +1259,44 @@ const DECOR_GLB = {
 };
 // Pavement walkers: `fwd` is the direction the model faces in its file.
 const WALKERS = [
-  { name: 'pedestrian-shopper', fwd: '-x', size: 1.85, speed: 1.3, bob: 0.05, rate: 8 },
-  { name: 'pedestrian-office-goer', fwd: '+x', size: 1.85, speed: 1.5, bob: 0.05, rate: 8 },
+  { name: 'pedestrian-shopper', fwd: '-x', size: 1.85, speed: 1.3, bob: 0.05, rate: 6.5 },   // rate: strides match speed so feet don't skate
+  { name: 'pedestrian-office-goer', fwd: '+x', size: 1.85, speed: 1.5, bob: 0.05, rate: 7.2 },
   { name: 'street-dog', fwd: '-z', size: 1.0, speed: 2.4, bob: 0.1, rate: 12 },
 ];
 function glbClone(name, size) {
   const m = GLB[name].scene.clone(true), d = new THREE.Box3().setFromObject(m).getSize(new THREE.Vector3());
   m.scale.setScalar(size / Math.max(d.x, d.y, d.z)); return m;
+}
+// The pedestrian models are unrigged statues frozen mid-stride, feet apart along their facing axis. Skin them to two hip
+// bones so the legs swing: weight ramps in from hip to knee, front/back split by which side of the hip a vertex sits.
+// Legs are what's joined to the feet below the hip: the hand-held bags are separate mesh islands, so they stay put.
+const legGeo = {}, ss = THREE.MathUtils.smoothstep;
+function legRig(name, m, fwd) {
+  let mesh; m.traverse(o => { if (o.isMesh && !mesh) mesh = o; }); if (!mesh) return null;
+  const fs = fwd === '-x' ? -1 : 1, L = legGeo[name] ||= (() => {
+    const g = mesh.geometry.clone(), p = g.attributes.position, n = p.count, ia = g.index.array, bb = new THREE.Box3().setFromBufferAttribute(p);
+    const H = bb.max.y - bb.min.y, hip = bb.min.y + H * 0.45, knee = bb.min.y + H * 0.25, foot = bb.min.y + H * 0.03;
+    const ids = new Map(), weld = new Int32Array(n);   // UV seams split vertices: weld by position before walking the mesh
+    for (let i = 0; i < n; i++) { const k = p.getX(i).toFixed(4) + ',' + p.getY(i).toFixed(4) + ',' + p.getZ(i).toFixed(4); if (!ids.has(k)) ids.set(k, ids.size); weld[i] = ids.get(k); }
+    const adj = Array.from({ length: ids.size }, () => []), yOf = new Float32Array(ids.size), leg = new Uint8Array(ids.size), st = [];
+    for (let i = 0; i < n; i++) yOf[weld[i]] = p.getY(i);
+    for (let t = 0; t < ia.length; t += 3) for (let a = 0; a < 3; a++) adj[weld[ia[t + a]]].push(weld[ia[t + (a + 1) % 3]], weld[ia[t + (a + 2) % 3]]);
+    for (let v = 0; v < ids.size; v++) if (yOf[v] < foot) { leg[v] = 1; st.push(v); }
+    while (st.length) for (const u of adj[st.pop()]) if (!leg[u] && yOf[u] < hip) { leg[u] = 1; st.push(u); }
+    let dx = 0, k = 0; for (let i = 0; i < n; i++) if (p.getY(i) < foot) { dx += Math.abs(p.getX(i)); k++; }
+    const si = new Uint16Array(n * 4), sw = new Float32Array(n * 4);
+    for (let i = 0; i < n; i++) {
+      const w = leg[weld[i]] ? ss(-p.getY(i), -hip, -knee) : 0, f = ss(p.getX(i) * fs, -0.04, 0.04);
+      si.set([0, 1, 2, 0], i * 4); sw.set([1 - w, w * f, w * (1 - f), 0], i * 4);
+    }
+    g.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(si, 4)); g.setAttribute('skinWeight', new THREE.Float32BufferAttribute(sw, 4));
+    return { g, hip, S: Math.atan2(dx / k, hip - bb.min.y) };   // S: how far each leg is swung in the frozen pose
+  })();
+  const root = new THREE.Bone(), legs = [new THREE.Bone(), new THREE.Bone()], sk = new THREE.SkinnedMesh(L.g, mesh.material);
+  for (const b of legs) { b.position.y = L.hip; root.add(b); }
+  sk.position.copy(mesh.position); sk.quaternion.copy(mesh.quaternion); sk.scale.copy(mesh.scale); sk.add(root);
+  mesh.parent.add(sk); mesh.removeFromParent(); m.updateMatrixWorld(true); sk.bind(new THREE.Skeleton([root, ...legs]));
+  return { legs, S: L.S * fs };
 }
 function glbDecor(kind, side) {
   const spec = DECOR_GLB[kind], names = spec ? spec.names.filter(n => GLB[n]) : [];
@@ -1284,7 +1362,7 @@ function buildDecor() {
     m.rotation.y = w.fwd === '-x' ? dir * Math.PI / 2 : w.fwd === '+x' ? -dir * Math.PI / 2 : dir > 0 ? Math.PI : 0;
     const z = DECOR_FRONT - i * (DECOR_SPAN / 7) - rand(0, 10), x = side * rand(4.7, 5.6);
     m.position.set(x, 0.14, z); scene.add(m);
-    decor.push({ m, z, kind: 'walker', len: 0, vz: dir * w.speed, bob: w.bob, rate: w.rate, ph: rand(0, 6) });
+    decor.push({ m, z, kind: 'walker', len: 0, vz: dir * w.speed, bob: w.bob, rate: w.rate, ph: rand(0, 6), ...(w.name.startsWith('pedestrian-') && legRig(w.name, m, w.fwd)) });
   }
   for (const { z0, list } of Object.values(chunkParts)) {
     const m = new THREE.Mesh(mergeGeos(list), VC); m.position.z = z0; scene.add(m);
@@ -1842,6 +1920,7 @@ function updateWorld(dt) {
     d.m.position.z = d.z;
     if (d.kind === 'crowd') d.m.position.y = 0.14 + Math.abs(Math.sin(t * 6 + d.ph)) * 0.22;
     if (d.kind === 'walker') d.m.position.y = 0.14 + Math.abs(Math.sin(t * d.rate + d.ph)) * d.bob;
+    if (d.legs) { const a = d.S * (Math.cos(t * d.rate + d.ph) - 1); d.legs[0].rotation.z = a; d.legs[1].rotation.z = -a; }   // legs pass at the bob's peak
     if (d.kind === 'steam' && d.z > -70 && d.z < 8 && (d.steam -= dt) <= 0) {   // kettle steam
       d.steam = 0.18; _steam.copy(d.m.position);
       burst(_steam.x, _steam.y, _steam.z, 1, ['#ffffff', '#fff3e6'], { speed: 0.25, up: 1.2, size: 0.2, life: 1.0, grav: -0.6 });
