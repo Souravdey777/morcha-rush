@@ -903,6 +903,8 @@ const POSES = {
   caught: { turns: [['LeftArm', Z, 125], ['RightArm', Z, -125], ['LeftForeArm', Z, 40], ['RightForeArm', Z, -40], ['Head', X, 12], ['Spine02', X, 6]] },   // hands up
   sit: { turns: [['LeftUpLeg', X, -80], ['RightUpLeg', X, -80], ['LeftLeg', X, 70], ['RightLeg', X, 70], ['LeftArm', Z, -20], ['RightArm', Z, 20],
     ['LeftArm', X, -30], ['RightArm', X, -30], ['Spine02', X, 10]], ground: ['Hips'], lift: 0.11 },   // riding the jugaad thela
+  duck: { turns: [['LeftUpLeg', X, 25], ['RightUpLeg', X, 25], ['LeftLeg', X, 8], ['RightLeg', X, 8], ['LeftArm', Z, 150], ['RightArm', Z, -150],
+    ['Head', X, 35]] },   // ducking on the thela: legs out, arms overhead, chin tucked to watch the road (tipped flat in the player update)
 };
 const _pq = new THREE.Quaternion(), _mq = new THREE.Quaternion(), _aq = new THREE.Quaternion();
 function bakePose(r, name) {
@@ -973,7 +975,7 @@ function drumGrip(r) {
 }
 // Drive a character: Higgsfield models play their run clip and blend into POSES; code-built rigs use procedural poses.
 function animate(r, mode, dt, rate, phase) {
-  if (!r.glb) { poseRig(r, phase, mode === 'sit' || mode === 'caught' ? 'run' : mode === 'stand' ? 'idle' : mode); return; }
+  if (!r.glb) { poseRig(r, phase, mode === 'sit' || mode === 'duck' || mode === 'caught' ? 'run' : mode === 'stand' ? 'idle' : mode); return; }
   r.action.timeScale = rate; r.mixer.update(dt);
   if (r.lean) {   // the runners' shared run clip hunches ~50° forward, which buries Guddu's head behind his backpack; stand them up to ~25°
     r.model.updateMatrixWorld(true); r.model.getWorldQuaternion(_mq).invert(); _aq.setFromAxisAngle(_v.set(1, 0, 0), r.lean / 2);
@@ -2079,10 +2081,13 @@ function updateCharacters(dt) {
   }
   if (playing) {
     runPhase += dt * (7 + ws * 0.32) * (state === 'CAUGHT' ? 0.4 : 1);
-    const mode = state === 'CAUGHT' ? 'caught' : !player.onGround ? 'jump' : player.thela ? 'sit' : player.slideT > 0 ? 'slide' : 'run';
+    const mode = state === 'CAUGHT' ? 'caught' : !player.onGround ? 'jump' : player.thela ? (player.slideT > 0 ? 'duck' : 'sit') : player.slideT > 0 ? 'slide' : 'run';
     animate(r, mode, dt, state === 'CAUGHT' ? 0.4 : clamp(ws / 16, 0.8, 1.8), runPhase);
     if (r.chappalArm && player.swingT > 0) r.chappalArm.rotation.set(-2.8 + (0.4 - player.swingT) * 6, 0, 0.3);
-    const hover = player.thela ? 0.42 + Math.sin(t * 9) * 0.05 : 0;
+    // ducking on the thela: limbo flat back onto the cart while it squats, instead of sitting bolt upright through the sign
+    const duck = player.duck = damp(player.duck || 0, player.thela && player.slideT > 0 ? 1 : 0, 16, dt);
+    if (duck > 0.001) { r.body.rotation.x = -1.35 * duck; r.body.position.y -= 0.3 * r.H * duck; r.body.position.z = 0.22 * r.H * duck; }   // tip back ~77°, drop onto the deck
+    const hover = player.thela ? 0.42 + Math.sin(t * 9) * 0.05 * (1 - duck) - 0.16 * duck : 0;
     r.root.position.set(player.x, player.y + hover, 0);
     const sq = player.landT > 0 ? player.landT / 0.15 : 0;
     r.root.scale.set(r.baseScale * (1 + sq * 0.18), r.baseScale * (1 - sq * 0.25 + (!player.onGround ? 0.06 : 0)), r.baseScale * (1 + sq * 0.18));
@@ -2091,7 +2096,7 @@ function updateCharacters(dt) {
     r.root.rotation.set(0, Math.PI, lean + wobble + (player.thela ? Math.sin(t * 7) * 0.08 : 0));
     r.root.visible = !(player.invulnT > 0 || power.press > 0) || Math.sin(t * 40) > -0.3;   // blink while invulnerable
     jiggleEyes(r, dt, (player.x - player.prevX) / Math.max(dt, 1e-3) * 0.01, -player.vy * 0.012);   // glance with lane switches and jumps
-    cart.visible = player.thela; if (player.thela) { cart.position.set(player.x, player.y + hover - 0.42 + 0.05, 0.05); cart.rotation.set(0, 0, Math.sin(t * 7) * 0.08); }
+    cart.visible = player.thela; if (player.thela) { cart.position.set(player.x, player.y + hover - 0.42 + 0.05, 0.05); cart.rotation.set(-0.12 * duck, 0, Math.sin(t * 7) * 0.08 * (1 - duck)); }
     stars.visible = player.stumbleT > CONFIG.STUMBLE_RECOVER - 1.6 || state === 'CAUGHT';
     if (stars.visible) { stars.position.set(player.x, player.y + (r.H || 2.1 * r.baseScale) + 0.25, 0); stars.rotation.y += dt * 6; }
     // Inspector: runs behind, waves the clipboard
