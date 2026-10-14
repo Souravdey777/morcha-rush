@@ -8,6 +8,7 @@
 <link rel="icon" type="image/png" sizes="32x32" href="brand/favicon-32.png">
 <link rel="apple-touch-icon" href="brand/apple-touch-icon.png">
 <link rel="manifest" href="manifest.webmanifest">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <style>
 :root{--saffron:#ff8a1f;--pink:#ff3d7f;--teal:#13b5a6;--marigold:#ffd23f;--plum:#2a1b3d;--cream:#fff8ec}
@@ -230,11 +231,13 @@ h2{font-size:clamp(40px,11vw,64px);color:var(--pink);-webkit-text-stroke:2px var
   <div id="nogl" class="hidden"><div class="card"><h2 style="font-size:32px">OYE!</h2><p class="quip">Your browser couldn't start WebGL, so the 3D march can't load here. Try a recent Chrome, Safari or Firefox.</p></div></div>
 </div>
 
-<script src="models.js"></script>  <!-- Higgsfield GLB models, packed by tools/pack-models.py -->
+<script src="models-list.js"></script>  <!-- Higgsfield GLB models: see tools/pack-models.py -->
+<script>if (location.protocol === 'file:') document.write('<script src="models.js"><\/script>');</script>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 <script type="module">
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 
 /* =====================================================================
    CONFIG: every gameplay number lives here. Tweak freely.
@@ -345,20 +348,22 @@ function persist() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save));
 
 /* =====================================================================
    Higgsfield GLB models (characters are rigged with a run cycle).
-   models.js holds them as base64 so the game also works from file://.
+   Over http they load from models-web/ (meshopt-compressed); from file:// they come base64-packed in models.js.
    Anything that fails to load falls back to the code-built version.
    ===================================================================== */
 const GLB = {};
 {
-  const src = window.MORCHA_MODELS || {}, loader = new GLTFLoader();
-  await Promise.all(Object.entries(src).map(async ([name, b64]) => {
+  const packed = window.MORCHA_MODELS, names = window.MORCHA_MODEL_NAMES || [], loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
+  await Promise.all(names.map(async name => {
     try {
-      const buf = await (await fetch('data:model/gltf-binary;base64,' + b64)).arrayBuffer();
+      const res = await fetch(packed ? 'data:model/gltf-binary;base64,' + packed[name] : 'models-web/' + name + '.glb');
+      if (!res.ok) throw new Error(res.status);
+      const buf = await res.arrayBuffer();
       GLB[name] = await loader.parseAsync(buf, '');
       GLB[name].scene.traverse(o => { if (o.isMesh) { for (const m of [].concat(o.material)) m.metalness = 0; } });   // no env map: metal reads as black
     } catch (e) { console.warn('Model failed to load, using fallback:', name, e); }
   }));
-  if (!Object.keys(src).length) console.warn('models.js missing: using code-built models');
+  if (!names.length) console.warn('models-list.js missing: using code-built models');
 }
 
 /* =====================================================================

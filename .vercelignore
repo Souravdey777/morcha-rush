@@ -6,3 +6,4 @@ tools/
 .env*
 screenshots/
 brand/logo.png
+models.js

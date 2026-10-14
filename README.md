@@ -79,9 +79,9 @@ Then open http://localhost:8765. Opening `index.html` directly from disk also wo
 ## How it's built
 
 - **One HTML file:** [`index.html`](index.html) holds all the game code, using [Three.js](https://threejs.org) r160 loaded from a CDN. There's no framework and no bundler.
-- **3D models:** the characters, obstacles, power-ups and street props in [`models/`](models) are rigged GLB files generated with Higgsfield (Meshy and Tripo) from the concept art in [`concepts/`](concepts). [`tools/pack-models.py`](tools/pack-models.py) packs them into `models.js` as base64, so the game also loads from `file://`. Re-run it after changing a model:
+- **3D models:** the characters, obstacles, power-ups and street props in [`models/`](models) are rigged GLB files generated with Higgsfield (Meshy and Tripo) from the concept art in [`concepts/`](concepts). [`tools/optimize-models.sh`](tools/optimize-models.sh) meshopt-compresses them into `models-web/` (11 MB → 5 MB), which the website loads in parallel and caches. [`tools/pack-models.py`](tools/pack-models.py) also packs them into `models.js` as base64, used only when `index.html` is opened straight from disk. Re-run both after changing a model:
   ```bash
-  python3 tools/pack-models.py
+  tools/optimize-models.sh && python3 tools/pack-models.py
   ```
 - **Menu art:** the start screen shows each character's concept art as a cutout (in [`art/`](art)). The 3D model takes over when the run starts.
 - **Fallbacks:** if a model fails to load, the game builds that character from simple shapes instead.
@@ -91,13 +91,15 @@ Then open http://localhost:8765. Opening `index.html` directly from disk also wo
 
 ```
 index.html              the whole game
-models.js               packed GLB models (generated)
+models-web/             compressed GLB models the website loads (generated)
+models-list.js          model names (generated)
+models.js               base64 models for file:// (generated)
 models/                 source GLB models + notes
 art/                    menu cutouts of each character
 brand/                  logo and app icons
 concepts/               concept art and turnaround sheets
 screenshots/            README images
-tools/pack-models.py    packs models/ into models.js
+tools/                  model compression + packing scripts
 design-doc.html         game design document
 ```
 
