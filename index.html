@@ -1681,7 +1681,7 @@ function gameOver() {
   bankRun();
   $('oScore').textContent = s.toLocaleString(); $('oDist').textContent = Math.floor(dist) + ' m'; $('oCoins').textContent = coinsRun;
   const withheld = Math.random() < 0.3;   // alt screen: the runner gets 'withheld in your region'
-  $('oTitle').textContent = withheld ? 'WITHHELD' : 'DETAINED!';
+  $('oTitle').textContent = withheld ? 'WITHHELD' : pick(['DETAINED!', 'DETAINED!', 'IT\'S DONE BRO']);
   $('quip').textContent = withheld ? 'This runner has been withheld in your region.' : DAROGA.name + ': "' + DAROGA.bio + '"\n' + pick(QUIPS);
   const rb = $('btnRevive'), short = CONFIG.BRIBE_COST - save.totalCoins;
   rb.classList.toggle('hidden', revived); rb.disabled = short > 0;
