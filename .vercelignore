@@ -4,7 +4,6 @@ tools/
 .claude/
 *.md
 .env*
-screenshots/
 brand/logo.png
 models.js
 node_modules/

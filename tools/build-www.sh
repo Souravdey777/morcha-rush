@@ -13,3 +13,4 @@ for f in loaders/GLTFLoader.js utils/BufferGeometryUtils.js utils/SkeletonUtils.
 done
 sed -i '' 's#https://cdn.jsdelivr.net/npm/three@0.160.0/#./vendor/three/#g; s#https://unpkg.com/posthog-js@1.435.5/dist/#./vendor/posthog-js/#' www/index.html
 sed -i '' '/_vercel\/insights/d' www/index.html   # Vercel Web Analytics only exists on the web deploy
+sed -i '' '/data-web-only/d' www/index.html   # guide pages only exist on the web deploy

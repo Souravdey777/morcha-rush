@@ -1,0 +1,30 @@
+:root{--saffron:#ff8a1f;--pink:#ff3d7f;--teal:#13b5a6;--marigold:#ffd23f;--plum:#2a1b3d;--cream:#fff8ec;--muted:#5b4a6b}
+*{box-sizing:border-box}
+body{margin:0;background:#ffc9a3;color:var(--plum);font:17px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:#c4245c}
+.wrap{max-width:860px;margin:0 auto;padding:16px 16px 48px}
+header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:6px 0 14px}
+.logo{display:flex;align-items:center;gap:8px;font:900 22px "Arial Black",Impact,sans-serif;color:var(--plum);text-decoration:none}
+.logo img{width:36px;height:36px;border-radius:9px}
+nav.links{display:flex;gap:14px;flex-wrap:wrap;font-weight:700}
+nav.links a{color:var(--plum);text-decoration:none}
+nav.links a[aria-current]{color:var(--pink)}
+main{background:var(--cream);border:3px solid var(--plum);border-radius:22px;box-shadow:0 6px 0 var(--plum);padding:22px clamp(16px,4vw,36px)}
+h1{font:900 clamp(32px,7vw,52px)/1.05 "Arial Black",Impact,sans-serif;color:var(--saffron);-webkit-text-stroke:2px var(--plum);paint-order:stroke fill;margin:4px 0 10px}
+h2{font:900 26px/1.2 "Arial Black",Impact,sans-serif;margin:28px 0 8px}
+h3{margin:18px 0 4px;font-size:19px}
+.lead{font-size:19px;color:var(--muted);margin-top:0}
+.play{display:inline-block;background:var(--pink);color:#fff;border:3px solid var(--plum);border-radius:16px;padding:.45em 1.3em;
+  font:900 22px "Arial Black",Impact,sans-serif;box-shadow:0 5px 0 var(--plum);text-decoration:none;margin:8px 0}
+.play:active{transform:translateY(4px);box-shadow:0 1px 0 var(--plum)}
+img{max-width:100%;height:auto;border-radius:14px}
+table{border-collapse:collapse;width:100%;margin:8px 0;font-size:16px}
+th,td{text-align:left;padding:8px;border-bottom:2px solid #f0dcc2;vertical-align:top}
+.chars{display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+.char{background:#fff;border:2px solid var(--plum);border-radius:16px;padding:12px}
+.char img{display:block;width:100%;height:260px;object-fit:contain;background:linear-gradient(var(--marigold),var(--saffron))}
+.char h3{margin:10px 0 0}
+.char q{display:block;font-style:italic;color:var(--muted)}
+details{border-bottom:2px solid #f0dcc2;padding:8px 0}
+summary{font-weight:700;cursor:pointer}
+footer{text-align:center;font-size:14px;margin-top:22px;color:var(--muted)}

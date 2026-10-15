@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+  <url><loc>https://morcha-rush.vercel.app/</loc><lastmod>2026-10-16</lastmod><priority>1.0</priority>
+    <image:image><image:loc>https://morcha-rush.vercel.app/brand/og.jpg</image:loc></image:image>
+    <image:image><image:loc>https://morcha-rush.vercel.app/screenshots/gameplay.jpg</image:loc></image:image>
+  </url>
+  <url><loc>https://morcha-rush.vercel.app/protest-game</loc><lastmod>2026-10-16</lastmod><priority>0.9</priority></url>
+  <url><loc>https://morcha-rush.vercel.app/how-to-play</loc><lastmod>2026-10-16</lastmod><priority>0.8</priority>
+    <image:image><image:loc>https://morcha-rush.vercel.app/screenshots/coins.jpg</image:loc></image:image>
+  </url>
+  <url><loc>https://morcha-rush.vercel.app/characters</loc><lastmod>2026-10-16</lastmod><priority>0.8</priority>
+    <image:image><image:loc>https://morcha-rush.vercel.app/art/guddu.webp</image:loc></image:image>
+    <image:image><image:loc>https://morcha-rush.vercel.app/art/dadi-ji.webp</image:loc></image:image>
+    <image:image><image:loc>https://morcha-rush.vercel.app/art/dhol-bro.webp</image:loc></image:image>
+    <image:image><image:loc>https://morcha-rush.vercel.app/art/camera-intern.webp</image:loc></image:image>
+    <image:image><image:loc>https://morcha-rush.vercel.app/art/cocky.webp</image:loc></image:image>
+  </url>
+  <url><loc>https://morcha-rush.vercel.app/about</loc><lastmod>2026-10-16</lastmod><priority>0.6</priority></url>
+</urlset>
