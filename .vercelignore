@@ -7,3 +7,11 @@ tools/
 screenshots/
 brand/logo.png
 models.js
+node_modules/
+www/
+ios/
+android/
+package.json
+package-lock.json
+capacitor.config.json
+assets/

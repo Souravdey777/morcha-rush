@@ -1,0 +1,9 @@
+{
+  "appId": "space.souravdey.morcharush",
+  "appName": "Morcha Rush",
+  "webDir": "www",
+  "backgroundColor": "#ffc9a3",
+  "ios": {
+    "scrollEnabled": false
+  }
+}
