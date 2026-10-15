@@ -84,6 +84,7 @@ button{pointer-events:auto;font:inherit;cursor:pointer;border:0;color:inherit;ba
 .pill{background:var(--cream);border:3px solid var(--plum);border-radius:14px;padding:3px 12px;
   font-size:clamp(16px,4.6vw,24px);box-shadow:0 3px 0 var(--plum);white-space:nowrap}
 .pill.small{font-size:clamp(12px,3.4vw,15px);padding:2px 9px;border-radius:11px}
+.coin::before{content:"₹";display:inline-grid;place-items:center;width:1.3em;height:1.3em;margin-right:.3em;border-radius:50%;font-size:.78em;font-weight:900;font-style:normal;line-height:1;vertical-align:.08em;color:#9a5a08;background:radial-gradient(circle at 40% 35%,#fff2a8,#ffc93d 60%,#e09a14);box-shadow:inset 0 0 0 .1em #c47a0c}
 .hud-row2{display:flex;justify-content:space-between;align-items:center;margin-top:8px;gap:8px}
 #powers{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
 .pw{position:relative;width:46px;height:46px;display:grid;place-items:center;background:var(--cream);border:3px solid var(--plum);border-radius:50%}
@@ -215,7 +216,7 @@ h2{font-size:clamp(40px,11vw,64px);color:var(--pink);-webkit-text-stroke:2px var
       </div>
       <div class="dots" id="dots"></div>
       <button class="btn" id="btnPlay">PLAY ▶</button>
-      <div class="stats">Best <b id="mBest">0</b> · Wallet <b id="mCoins">₹ 0</b></div>
+      <div class="stats">Best <b id="mBest">0</b> · Coins <b id="mCoins" class="coin">0</b></div>
       <div class="row mini"><button class="chip" id="btnAch">🏆 <span id="achCount">0/5</span></button><button class="chip" id="btnHelp">❓ HOW TO PLAY</button></div>
       <p class="hint" id="hint"></p>
     </div>
@@ -235,7 +236,7 @@ h2{font-size:clamp(40px,11vw,64px);color:var(--pink);-webkit-text-stroke:2px var
         <div class="pw hidden" data-k="slow"><svg viewBox="0 0 46 46"><circle class="arc" cx="23" cy="23" r="20"/></svg><span>🍔</span></div>
         <div class="pw hidden" data-k="thela"><span>🛺</span></div>
       </div>
-      <div class="pill" id="hCoins">₹ 0</div>
+      <div class="pill coin" id="hCoins">0</div>
     </div>
     <div class="hud-row2">
       <div id="insp" title="Daroga Ji distance"><span>👮</span><div class="bar"><div id="inspFill"></div></div></div>
@@ -262,10 +263,10 @@ h2{font-size:clamp(40px,11vw,64px);color:var(--pink);-webkit-text-stroke:2px var
       <div class="grid">
         <div><small>Score</small><b id="oScore">0</b></div>
         <div><small>Distance</small><b id="oDist">0 m</b></div>
-        <div><small>Coins</small><b id="oCoins">₹ 0</b></div>
+        <div><small>Coins</small><b id="oCoins" class="coin">0</b></div>
         <div><small>Best</small><b id="oBest">0</b></div>
       </div>
-      <div class="stats" id="oPurse">Wallet <b id="oPurseAmt">₹ 0</b></div>
+      <div class="stats" id="oPurse">Coins <b id="oPurseAmt" class="coin">0</b></div>
       <button class="btn" id="btnRevive" style="width:100%;margin-bottom:10px"></button>
       <div class="row"><button class="btn alt" id="btnRestart">RESTART</button><button class="btn gold" id="btnMenu">MENU</button></div>
       <p class="sub" id="oWallet"></p>
@@ -279,7 +280,7 @@ h2{font-size:clamp(40px,11vw,64px);color:var(--pink);-webkit-text-stroke:2px var
     <div class="card"><h2 style="font-size:34px">ABOUT</h2><p class="sub">Morcha Rush is pure satire, made just for fun. Every character and name is made up, and nothing here is meant to hurt anyone's sentiments.</p><p class="sub">The code is on <a href="https://github.com/Souravdey777/morcha-rush" target="_blank" rel="noopener">GitHub</a>. If you enjoyed it, feel free to give it a ⭐</p><p class="sub">Developed by <a href="https://souravdey.space" target="_blank" rel="noopener"><b>Sourav Dey</b></a></p><button class="btn alt" data-close>CLOSE</button></div>
   </div>
   <div id="helpPanel" class="panel hidden" style="justify-content:center;background:rgba(42,27,61,.35)">
-    <div class="card"><h2 style="font-size:34px">HOW TO PLAY</h2><div class="list"><h3>The run</h3><div class="it"><span class="em">🏃</span><div><b>Run the march</b><small>Ring the gate bell and BHAAG! Switch lanes, jump and slide. Collect ₹ coins to unlock new runners.</small></div></div><div class="it" data-k="inspector"><span class="em">🚨</span><div><b>Daroga Ji</b><small>Crash once and you stumble: he closes in for a few seconds. Crash again before you recover and he catches you. Caught? Pay him ₹500 from your wallet to carry on, once per run.</small></div></div><div class="it"><span class="em">⌨️</span><div><b>Controls</b><small>Desktop: ← → or A D to switch lanes, ↑ / W to jump, ↓ / S to slide, P to pause. Phone: swipe left, right, up or down.</small></div></div><h3>Obstacles</h3><div class="it" data-k="barricade"><span class="em">🚧</span><div><b>Barricade</b><small>"Adjusting, please wait." Jump over it.</small></div></div><div class="it" data-k="sign"><span class="em">🚫</span><div><b>Section 144 sign</b><small>Slide under it.</small></div></div><div class="it" data-k="pothole"><span class="em">🕳️</span><div><b>Pothole</b><small>The road budget went somewhere. Jump over it.</small></div></div><div class="it" data-k="onion"><span class="em">🧅</span><div><b>Onion cart</b><small>Jump over it. Hit one and you will be in tears.</small></div></div><div class="it" data-k="convoy"><span class="em">🚓</span><div><b>VIP convoy</b><small>Route diverted. Too big to jump: switch lanes.</small></div></div><div class="it" data-k="station"><span class="em">🚉</span><div><b>Station closed</b><small>Inconvenience regretted. Too tall to jump, no gap to slide: switch lanes.</small></div></div><h3>Power-ups</h3><div class="it" data-k="chai"><span class="em">☕</span><div><b>Cutting Chai</b><small>5 seconds of extra speed. You smash through anything in your way.</small></div></div><div class="it" data-k="dhol"><span class="em">🥁</span><div><b>Dhol Beat</b><small>6 seconds of smashing straight through barricades.</small></div></div><div class="it" data-k="press"><span class="em">📸</span><div><b>Press Pass</b><small>4 seconds of invincibility. EXPOSED!</small></div></div><div class="it" data-k="thela"><span class="em">🛺</span><div><b>Jugaad Thela</b><small>Ride a cart that takes one crash for you.</small></div></div><div class="it" data-k="thali"><span class="em">🍽️</span><div><b>Steel Thali</b><small>Thali Dadi's, borrowed. The clatter stuns Daroga Ji for 3 seconds, and gets you out of a stumble.</small></div></div><h3>Runners</h3><div id="runnerList"></div><h3>Watch out for</h3><div class="it" data-k="book"><span class="em">📘</span><div><b>Required Reading</b><small>A rare book worth +50 coins.</small></div></div><div class="it" data-k="burger"><span class="em">🍔</span><div><b>Shiny burger</b><small>Looks like a power-up. It is a trap: bad optics slow you down for 2 seconds.</small></div></div><div class="it"><span class="em">⚡</span><div><b>Bijli Gayi</b><small>Random power cuts plunge the street into darkness for 5 to 15 seconds.</small></div></div><div class="it" data-k="roach"><span class="em">🪳</span><div><b>The little brown visitor</b><small>Shows up once a run. Tap it for a bonus and an achievement.</small></div></div></div><button class="btn alt" data-close>GOT IT</button></div>
+    <div class="card"><h2 style="font-size:34px">HOW TO PLAY</h2><div class="list"><h3>The run</h3><div class="it"><span class="em">🏃</span><div><b>Run the march</b><small>Ring the gate bell and BHAAG! Switch lanes, jump and slide. Collect coins to unlock new runners.</small></div></div><div class="it" data-k="inspector"><span class="em">🚨</span><div><b>Daroga Ji</b><small>Crash once and you stumble: he closes in for a few seconds. Crash again before you recover and he catches you. Caught? Pay him 500 coins to carry on, once per run.</small></div></div><div class="it"><span class="em">⌨️</span><div><b>Controls</b><small>Desktop: ← → or A D to switch lanes, ↑ / W to jump, ↓ / S to slide, P to pause. Phone: swipe left, right, up or down.</small></div></div><h3>Obstacles</h3><div class="it" data-k="barricade"><span class="em">🚧</span><div><b>Barricade</b><small>"Adjusting, please wait." Jump over it.</small></div></div><div class="it" data-k="sign"><span class="em">🚫</span><div><b>Section 144 sign</b><small>Slide under it.</small></div></div><div class="it" data-k="pothole"><span class="em">🕳️</span><div><b>Pothole</b><small>The road budget went somewhere. Jump over it.</small></div></div><div class="it" data-k="onion"><span class="em">🧅</span><div><b>Onion cart</b><small>Jump over it. Hit one and you will be in tears.</small></div></div><div class="it" data-k="convoy"><span class="em">🚓</span><div><b>VIP convoy</b><small>Route diverted. Too big to jump: switch lanes.</small></div></div><div class="it" data-k="station"><span class="em">🚉</span><div><b>Station closed</b><small>Inconvenience regretted. Too tall to jump, no gap to slide: switch lanes.</small></div></div><h3>Power-ups</h3><div class="it" data-k="chai"><span class="em">☕</span><div><b>Cutting Chai</b><small>5 seconds of extra speed. You smash through anything in your way.</small></div></div><div class="it" data-k="dhol"><span class="em">🥁</span><div><b>Dhol Beat</b><small>6 seconds of smashing straight through barricades.</small></div></div><div class="it" data-k="press"><span class="em">📸</span><div><b>Press Pass</b><small>4 seconds of invincibility. EXPOSED!</small></div></div><div class="it" data-k="thela"><span class="em">🛺</span><div><b>Jugaad Thela</b><small>Ride a cart that takes one crash for you.</small></div></div><div class="it" data-k="thali"><span class="em">🍽️</span><div><b>Steel Thali</b><small>Thali Dadi's, borrowed. The clatter stuns Daroga Ji for 3 seconds, and gets you out of a stumble.</small></div></div><h3>Runners</h3><div id="runnerList"></div><h3>Watch out for</h3><div class="it" data-k="book"><span class="em">📘</span><div><b>Required Reading</b><small>A rare book worth +50 coins.</small></div></div><div class="it" data-k="burger"><span class="em">🍔</span><div><b>Shiny burger</b><small>Looks like a power-up. It is a trap: bad optics slow you down for 2 seconds.</small></div></div><div class="it"><span class="em">⚡</span><div><b>Bijli Gayi</b><small>Random power cuts plunge the street into darkness for 5 to 15 seconds.</small></div></div><div class="it" data-k="roach"><span class="em">🪳</span><div><b>The little brown visitor</b><small>Shows up once a run. Tap it for a bonus and an achievement.</small></div></div></div><button class="btn alt" data-close>GOT IT</button></div>
   </div>
   </div>
 
@@ -342,6 +343,7 @@ function logGame(level, message, attributes) { posthog?.logger?.[level]?.(messag
 /* =====================================================================
    CONFIG: every gameplay number lives here. Tweak freely.
    ===================================================================== */
+const COIN = '<i class="coin"></i>';   // golden ₹ coin icon for prices, styled by .coin::before
 const CONFIG = {
   LANE_WIDTH: 2.2,          // world units between lane centres (3 lanes: -1, 0, 1)
   LANE_SWITCH_TIME: 0.12,   // seconds to glide one lane over
@@ -1402,7 +1404,7 @@ function legRig(name, m, fwd) {
   mesh.parent.add(sk); mesh.removeFromParent(); m.updateMatrixWorld(true); sk.bind(new THREE.Skeleton([root, ...legs]));
   return { legs, gait: L.bones, axis: L.axis };
 }
-// The roadside crowd: the game's own runners, recoloured, cheering or standing. Until they load it's the pedestrians.
+// The roadside crowd: the game's own runners, recoloured, cheering or standing. Until they load (and always on phones) it's the pedestrians.
 const CROWD = ['guddu', 'dadi', 'dhol', 'intern', 'cocky'];
 function crowdRunner(id) {
   const r = rigs[id], pose = pick(['caught', 'caught', 'stand']), P = r.poses[pose] ||= bakePose(r, pose);
@@ -1418,7 +1420,7 @@ function crowdRunner(id) {
   return g;
 }
 function glbDecor(kind, side) {
-  const runners = kind === 'crowd' ? CROWD.filter(id => rigs[id].glb) : [];
+  const runners = kind === 'crowd' && !isTouch ? CROWD.filter(id => rigs[id].glb) : [];   // phones keep the pedestrians: 2 skinned 18k-tri runners per crowd sank Android frame rates
   if (runners.length) {
     const g = new THREE.Group();
     for (let i = 0; i < 2; i++) { const m = crowdRunner(pick(runners)); m.position.x = (i - 0.5) * 1.0; g.add(m); }
@@ -1628,7 +1630,7 @@ function resetRun() {
   $('warn').classList.add('hidden'); $('insp').classList.remove('hot');
   const r = player.rig.root; r.position.set(0, 0, 0); r.rotation.set(0, Math.PI, 0); r.visible = true;
   inspector.root.visible = true;
-  hudCache = {}; hudEls.dist.textContent = '0 m'; hudEls.coins.textContent = '₹ 0'; hudEls.score.textContent = '★ 0'; hudEls.fill.style.width = '0%';
+  hudCache = {}; hudEls.dist.textContent = '0 m'; hudEls.coins.textContent = '0'; hudEls.score.textContent = '★ 0'; hudEls.fill.style.width = '0%';
   for (const k in pwEls) pwEls[k].classList.add('hidden');
   camera.position.set(0, camUp, camBack);
 }
@@ -1677,16 +1679,16 @@ function gameOver() {
   track('run_end', { runner: save.selected, score: s, distance: Math.floor(dist), coins: coinsRun, new_best: isBest, caught_by: caughtBy, revived });
   logGame('info', 'game run completed', { runner: save.selected, score: s, distance: Math.floor(dist), coins: coinsRun, new_best: isBest, caught_by: caughtBy, revived, platform: PLATFORM });
   bankRun();
-  $('oScore').textContent = s.toLocaleString(); $('oDist').textContent = Math.floor(dist) + ' m'; $('oCoins').textContent = '₹ ' + coinsRun;
-  const withheld = Math.random() < 0.3;   // alt screen: the runner gets 'withheld in your region'
-  $('oTitle').textContent = withheld ? 'WITHHELD' : 'DETAINED!';
+  $('oScore').textContent = s.toLocaleString(); $('oDist').textContent = Math.floor(dist) + ' m'; $('oCoins').textContent = coinsRun;
+  const withheld = Math.random() < 0.2;   // alt screen: the runner gets 'withheld in your region'
+  $('oTitle').textContent = withheld ? 'WITHHELD' : pick(['DETAINED!', 'IT\'S DONE BRO']);
   $('quip').textContent = withheld ? 'This runner has been withheld in your region.' : DAROGA.name + ': "' + DAROGA.bio + '"\n' + pick(QUIPS);
   const rb = $('btnRevive'), short = CONFIG.BRIBE_COST - save.totalCoins;
   rb.classList.toggle('hidden', revived); rb.disabled = short > 0;
-  rb.textContent = short > 0 ? `Chai-paani: ₹\u00a0${CONFIG.BRIBE_COST} (need ₹\u00a0${short} more)` : `Chai-paani do, chhoot jao · ₹\u00a0${CONFIG.BRIBE_COST}`;
+  rb.innerHTML = short > 0 ? `Chai-paani: ${COIN}${CONFIG.BRIBE_COST} (need ${COIN}${short} more)` : `Chai-paani do, chhoot jao · ${COIN}${CONFIG.BRIBE_COST}`;
   $('oBest').textContent = save.best.toLocaleString();
   $('newBest').classList.toggle('hidden', !isBest);
-  $('oPurseAmt').textContent = '₹ ' + save.totalCoins;
+  $('oPurseAmt').textContent = save.totalCoins;
   $('oWallet').textContent = `Best distance ${save.bestDist} m · Space to restart`;
   show('over');
 }
@@ -1954,7 +1956,7 @@ function updatePlaying(dt) {
 
   // --- HUD ---
   setHud('dist', hudEls.dist, Math.floor(dist) + ' m');
-  setHud('coins', hudEls.coins, '₹ ' + coinsRun);
+  setHud('coins', hudEls.coins, coinsRun);
   setHud('score', hudEls.score, '★ ' + score());
   const id = CHARS[selIdx].id;
   setHud('ability', hudEls.ability, id === 'dadi' ? (player.dadiCD <= 0 ? '🩴 READY' : '🩴 ' + Math.ceil(player.dadiCD) + 's') : id === 'dhol' ? '🥁 BEAT DROP' : id === 'intern' ? '📸 NEAR-MISS +25' : id === 'cocky' ? (player.cockyLife ? '🪳 1 LIFE' : '🪳 USED') : '🤔 HMMM');
@@ -2203,9 +2205,9 @@ function refreshMenu() {
   $('dots').innerHTML = CHARS.map((_, i) => `<i class="${i === selIdx ? 'on' : ''}">●</i>`).join('');
   const b = $('btnPlay');
   if (unlocked) { b.textContent = 'PLAY ▶'; b.disabled = false; b.className = 'btn'; }
-  else if (save.totalCoins >= cost) { b.textContent = `UNLOCK · ₹ ${cost}`; b.disabled = false; b.className = 'btn gold'; }
-  else { b.textContent = `🔒 ₹ ${cost} (need ${cost - save.totalCoins})`; b.disabled = true; b.className = 'btn gold'; }
-  $('mBest').textContent = save.best.toLocaleString(); $('mCoins').textContent = '₹ ' + save.totalCoins;
+  else if (save.totalCoins >= cost) { b.innerHTML = `UNLOCK · ${COIN}${cost}`; b.disabled = false; b.className = 'btn gold'; }
+  else { b.innerHTML = `🔒 ${COIN}${cost} (need ${cost - save.totalCoins})`; b.disabled = true; b.className = 'btn gold'; }
+  $('mBest').textContent = save.best.toLocaleString(); $('mCoins').textContent = save.totalCoins;
   $('achCount').textContent = ACH.filter(a => save.ach[a.id]).length + '/' + ACH.length;
   $('mute').textContent = save.muted ? '🔇' : '🔊';
   $('hint').textContent = isTouch ? 'Swipe ← → to switch lanes, ↑ to jump, ↓ to slide' : '← → / A D lanes · ↑ W jump · ↓ S slide · Space start · P pause';
@@ -2237,7 +2239,7 @@ function helpThumbs() {
 function openPanel(id) { if (id === 'helpPanel') renderRunners(); $(id).classList.remove('hidden'); }
 function renderRunners() {   // built from CHARS so How to Play never drifts from the character select
   $('runnerList').innerHTML = CHARS.map(c => { const own = save.unlocked.includes(c.id), cost = CONFIG.UNLOCK_COST[c.id];
-    return `<div class="it"><img class="em" src="art/${GLB_NAME[c.id]}.webp" alt=""><div><b>${c.name}</b><small>${c.ability}</small><small>${own ? 'Unlocked ✓' : `🔒 ₹ ${cost}`}</small></div></div>`; }).join('');
+    return `<div class="it"><img class="em" src="art/${GLB_NAME[c.id]}.webp" alt=""><div><b>${c.name}</b><small>${c.ability}</small><small>${own ? 'Unlocked ✓' : `🔒 ${COIN}${cost}`}</small></div></div>`; }).join('');
 }
 function renderAch() {
   $('achList').innerHTML = ACH.map(a => { const [h, n] = a.prog(), done = !!save.ach[a.id];
