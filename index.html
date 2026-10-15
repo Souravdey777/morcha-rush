@@ -188,6 +188,7 @@ h2{font-size:clamp(40px,11vw,64px);color:var(--pink);-webkit-text-stroke:2px var
 #loadBar{height:100%;width:4%;background:var(--saffron);border-radius:99px;transition:width .3s}
 #loading{transition:opacity .3s}#loading.gone{opacity:0}
 </style>
+<script defer src="/_vercel/insights/script.js"></script>   <!-- Vercel Web Analytics; stripped from the app build -->
 </head>
 <body>
 <canvas id="c"></canvas>
@@ -302,11 +303,41 @@ h2{font-size:clamp(40px,11vw,64px);color:var(--pink);-webkit-text-stroke:2px var
 })();
 </script>
 <script>if (location.protocol === 'file:') document.write('<script src="models.js"><\/script>');</script>
+<script src="posthog-config.js"></script>
 <script type="module">
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
+
+const POSTHOG_KEY = window.POSTHOG_CONFIG?.key;
+const POSTHOG_HOST = window.POSTHOG_CONFIG?.host;
+const PLATFORM = window.Capacitor?.getPlatform?.() ?? 'web';
+let posthog = null;
+if (POSTHOG_KEY && POSTHOG_HOST) import('https://unpkg.com/posthog-js@1.435.5/dist/module.js').then(m => {
+  posthog = m.default;
+  posthog.init(POSTHOG_KEY, {
+    api_host: POSTHOG_HOST,
+    persistence: 'localStorage',
+    logs: {
+      serviceName: 'morcha-rush',
+      environment: /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'development' : 'production',
+      resourceAttributes: { 'app.platform': PLATFORM },
+    },
+    capture_exceptions: {
+      capture_unhandled_errors: true,
+      capture_unhandled_rejections: true,
+      capture_console_errors: false,
+    },
+  });
+  posthog.register({ platform: PLATFORM });
+}).catch(() => {});
+else if (/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) {
+  const missing = POSTHOG_KEY ? 'VITE_POSTHOG_HOST' : 'VITE_POSTHOG_KEY';
+  console.error(new Error(`${missing} variable required by PostHog is missing or un-configured, this causes events to be silently missed. This error stops appearing once ${missing} is configured`));
+}
+function track(event, props) { posthog?.capture(event, props); }
+function logGame(level, message, attributes) { posthog?.logger?.[level]?.(message, attributes); }
 
 /* =====================================================================
    CONFIG: every gameplay number lives here. Tweak freely.
@@ -1608,9 +1639,16 @@ function startGame() {
   pendingStart = false;
   resetRun(); state = 'PLAYING';
   save.stats.runs++; checkAch(); persist();
+  track('run_start', { runner: save.selected, run_number: save.stats.runs });
+  logGame('info', 'game run started', { runner: save.selected, run_number: save.stats.runs, platform: PLATFORM });
   show('hud');
 }
+function bankRun() {   // best + wallet; safe to call twice: coinsBanked stops double-paying
+  save.best = Math.max(save.best, score()); save.bestDist = Math.max(save.bestDist, Math.floor(dist)); save.totalCoins += (coinsRun - coinsBanked) * CONFIG.COIN_VALUE; coinsBanked = coinsRun; persist();
+}
 function goMenu() {
+  if (state === 'PAUSED') track('run_quit', { runner: save.selected, score: score(), distance: Math.floor(dist), coins: coinsRun });
+  if (state !== 'MENU') bankRun();   // quitting from pause keeps what you earned
   for (const p of allPools) p.releaseAll();
   state = 'MENU'; strip.visible = shock.visible = cart.visible = stars.visible = false; $('warn').classList.add('hidden');
   const r = player.rig.root; r.position.set(0, 0, 0); r.rotation.set(0, 0, 0); r.visible = true;
@@ -1619,6 +1657,7 @@ function goMenu() {
 function revive() {   // Rishwat: pay Daroga Ji from the wallet, once per run, and carry on from where you were detained
   if (state !== 'GAMEOVER' || revived || save.totalCoins < CONFIG.BRIBE_COST) return;
   save.totalCoins -= CONFIG.BRIBE_COST; revived = true; save.stats.revives++; checkAch(); persist();
+  track('revive', { distance: Math.floor(dist) });
   for (const type of Object.keys(OB)) for (const ob of pools[type].items) if (ob.active && ob.z > -30) pools[type].release(ob);
   player.stumbleT = 0; player.invulnT = 2; player.y = 0; player.vy = 0; player.onGround = true; inspZ = CONFIG.INSPECTOR_FAR_Z;
   speed = Math.max(CONFIG.START_SPEED, speed * 0.8); state = 'PLAYING'; show('hud'); pop('SETTING HO GAYI!', player.x, 2.4, -1, 'teal'); SFX.power();
@@ -1627,14 +1666,17 @@ function pauseGame() { if (state !== 'PLAYING') return; state = 'PAUSED'; $('pau
 function resumeGame() { if (state !== 'PAUSED') return; state = 'PLAYING'; show('hud'); }
 function score() { return Math.floor(dist) + coinsRun * CONFIG.COIN_SCORE + bonus; }
 
-function caught() {
-  state = 'CAUGHT'; caughtT = 0; caughtSpeed = ws; shakeT = 0.5; SFX.hit();
+let caughtBy = null;
+function caught(by) {
+  caughtBy = by; state = 'CAUGHT'; caughtT = 0; caughtSpeed = ws; shakeT = 0.5; SFX.hit();
   pop('CHALO THANE!', player.x, 2.4, 0.5, 'pink');
 }
 function gameOver() {
   state = 'GAMEOVER';
   const s = score(), isBest = s > save.best;
-  save.best = Math.max(save.best, s); save.bestDist = Math.max(save.bestDist, Math.floor(dist)); save.totalCoins += (coinsRun - coinsBanked) * CONFIG.COIN_VALUE; coinsBanked = coinsRun; persist();
+  track('run_end', { runner: save.selected, score: s, distance: Math.floor(dist), coins: coinsRun, new_best: isBest, caught_by: caughtBy, revived });
+  logGame('info', 'game run completed', { runner: save.selected, score: s, distance: Math.floor(dist), coins: coinsRun, new_best: isBest, caught_by: caughtBy, revived, platform: PLATFORM });
+  bankRun();
   $('oScore').textContent = s.toLocaleString(); $('oDist').textContent = Math.floor(dist) + ' m'; $('oCoins').textContent = '₹ ' + coinsRun;
   const withheld = Math.random() < 0.3;   // alt screen: the runner gets 'withheld in your region'
   $('oTitle').textContent = withheld ? 'WITHHELD' : 'DETAINED!';
@@ -1650,7 +1692,7 @@ function gameOver() {
 }
 function toast(msg) { const el = $('toast'); el.textContent = msg; el.classList.remove('hidden', 'go'); void el.offsetWidth; el.classList.add('go'); }
 function unlockAch(id) {
-  if (save.ach[id]) return; save.ach[id] = true; persist();
+  if (save.ach[id]) return; save.ach[id] = true; persist(); track('achievement', { id });
   const a = ACH.find(x => x.id === id); toast(`🏆 ${a.name}`); SFX.power();
 }
 function checkAch() { for (const a of ACH) { const [h, n] = a.prog(); if (h >= n && a.id !== 'member') unlockAch(a.id); } }
@@ -1810,7 +1852,7 @@ function hit(ob) {
     burst(player.x, 0.5, 0, 16, ['#6b3b1f', '#c8a2e8', '#ffffff'], { speed: 6, up: 5, size: 0.2, life: 0.9 });
     pop('UNBOTHERED!', player.x, 2, 0, 'teal'); return;
   }
-  if (player.stumbleT > 0 && power.thali <= 0) { caught(); return; }
+  if (player.stumbleT > 0 && power.thali <= 0) { caught(ob.type); return; }
   if (player.stumbleT > 0) { player.invulnT = CONFIG.INVULN_AFTER_HIT; shakeT = 0.3; SFX.hit(); pop('OOF!', player.x, 2.2, 0, 'white'); return; }   // thali-stunned: no catch
   player.stumbleT = CONFIG.STUMBLE_RECOVER; player.invulnT = CONFIG.INVULN_AFTER_HIT; shakeT = 0.4;
   speed = Math.max(CONFIG.START_SPEED, speed * 0.85); SFX.hit(); SFX.whistle();
@@ -2211,7 +2253,8 @@ function playOrUnlock() {
   if (isUnlocked()) return startGame();
   const cost = CONFIG.UNLOCK_COST[c.id];
   if (save.totalCoins >= cost) {
-    save.totalCoins -= cost; save.unlocked.push(c.id); save.selected = c.id; persist();
+    save.totalCoins -= cost; save.unlocked.push(c.id); save.selected = c.id; persist(); track('runner_unlock', { runner: c.id, cost });
+    logGame('info', 'game runner unlocked', { runner: c.id, cost, platform: PLATFORM });
     pop('TADAA!', 0, 2.2, 0, 'pink'); SFX.power(); burst(0, 1.5, 0, 24, [COL.pink, COL.teal, COL.marigold], { speed: 4, up: 5, size: 0.14, life: 1 });
     refreshMenu();
   }
