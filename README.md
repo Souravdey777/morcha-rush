@@ -87,6 +87,7 @@ Then open http://localhost:8765. Opening `index.html` directly from disk also wo
   ```
 - **Menu:** the start screen shows the selected runner's 3D model in a standing pose.
 - **Fallbacks:** if a model fails to load, the game builds that character from simple shapes instead.
+- **Analytics:** [PostHog](https://posthog.com) records game events (`run_start`, `run_end` with score and what caught you, `run_quit`, `revive`, `achievement`, `runner_unlock`) and errors, tagged with `platform` (web, ios or android). The public project key is in [`posthog-config.js`](posthog-config.js). The PostHog library loads in the background, so an ad blocker or a missing network never stops the game. Vercel Web Analytics adds page views on the website.
 - **Saves:** your progress is saved in the browser with `localStorage`.
 - **Teary screen:** clipping an onion cart blurs the screen with a line from [`tear-lines.js`](tear-lines.js): the runner's own pool, a shared pool, and a rare Daroga Ji line, shuffled so nothing repeats too soon. Check the picker with `node tools/test-tear-lines.mjs`. On localhost (or with `?debug` in the URL), press **T** to trigger it.
 
@@ -97,6 +98,7 @@ index.html              the whole game
 models-web/             compressed GLB models the website loads (generated)
 models-list.js          model names (generated)
 models.js               base64 models for file:// (generated)
+posthog-config.js       PostHog public project key
 models/                 source GLB models + notes
 art/                    character cutouts (no longer used by the game)
 brand/                  logo and app icons
@@ -116,7 +118,7 @@ vercel --prod
 
 ## Mobile apps (iOS and Android)
 
-The same game ships as native apps through [Capacitor](https://capacitorjs.com). The web version is unchanged: `npm run www` copies the game into `www/` and points Three.js at a bundled copy so the app plays offline, then Capacitor wraps `www/` in the `ios/` and `android/` projects.
+The same game ships as native apps through [Capacitor](https://capacitorjs.com). The web version is unchanged: `npm run www` copies the game into `www/` and points Three.js and PostHog at bundled copies so the app plays offline, then Capacitor wraps `www/` in the `ios/` and `android/` projects.
 
 ```bash
 npm install
