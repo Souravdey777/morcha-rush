@@ -29,10 +29,10 @@ It runs in the browser on desktop and mobile, with no install and no build step.
 | | Character | Bio | Ability | Unlock |
 |---|---|---|---|---|
 | 🎒 | **Guddu** *(RE-EXAM!)* | Third attempt. Second leak. Still has the admit card laminated. | No special move. | Free |
-| 🩴 | **Thali Dadi** *(THAN-THAN!)* | Brought her steel thali from home. Didn't bring it back. | **Chappal Swat:** automatically swats a barricade out of the way every 8 seconds. | ₹500 |
-| 🥁 | **MC Dhol** *(DHAM!)* | Dropped a diss track at the barricade. Dhol is the beat, Jantar Mantar is the studio. | **Beat Drop:** every landing sends a shockwave that clears obstacles ahead. | ₹1000 |
-| 📸 | **Camera Person** *(LIKE & SHARE!)* | Rolling since the first barricade. The reel outlived the minister. | **Viral Flash:** every near-miss flashes the camera for +25 points. | ₹2000 |
-| 🪳 | **Cocky** *(UNBOTHERED!)* | Chronically online, 11 hours a day, bathroom breaks included. Lazy only in the physical sense. | **Unkillable:** shrugs off one crash per run. | ₹3000 |
+| 🩴 | **Thali Dadi** *(THAN-THAN!)* | Brought her steel thali from home. Didn't bring it back. | **Chappal Swat:** automatically swats a barricade out of the way every 8 seconds. | ₹250 |
+| 🥁 | **MC Dhol** *(DHAM!)* | Dropped a diss track at the barricade. Dhol is the beat, Jantar Mantar is the studio. | **Beat Drop:** every landing sends a shockwave that clears obstacles ahead. | ₹500 |
+| 📸 | **Camera Person** *(LIKE & SHARE!)* | Rolling since the first barricade. The reel outlived the minister. | **Viral Flash:** every near-miss flashes the camera for +25 points. | ₹1000 |
+| 🪳 | **Cocky** *(UNBOTHERED!)* | Chronically online, 11 hours a day, bathroom breaks included. Lazy only in the physical sense. | **Unkillable:** shrugs off one crash per run. | ₹1500 |
 
 On your heels: 👮 **Daroga Ji** *(CHALO THANE!)*. Still waiting for your Form 26-A. Attested. Three copies.
 
