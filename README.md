@@ -113,3 +113,18 @@ The game is a static site and is deployed on [Vercel](https://vercel.com). `.ver
 ```bash
 vercel --prod
 ```
+
+## Mobile apps (iOS and Android)
+
+The same game ships as native apps through [Capacitor](https://capacitorjs.com). The web version is unchanged: `npm run www` copies the game into `www/` and points Three.js at a bundled copy so the app plays offline, then Capacitor wraps `www/` in the `ios/` and `android/` projects.
+
+```bash
+npm install
+npm run ios       # build www/, sync, open Xcode
+npm run android   # build www/, sync, open Android Studio
+npm run apk       # or build a debug APK from the terminal (needs JDK 21: brew install openjdk@21)
+```
+
+The APK lands in `android/app/build/outputs/apk/debug/`. For `npm run apk`, set `JAVA_HOME` to `$(brew --prefix openjdk@21)/libexec/openjdk.jdk/Contents/Home`.
+
+Edit the game in `index.html` as usual, then rerun one of the commands above. App icons come from `assets/icon.png` (`npx @capacitor/assets generate`).
