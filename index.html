@@ -253,7 +253,7 @@ h2{font-size:clamp(40px,11vw,64px);color:var(--pink);-webkit-text-stroke:2px var
       <div class="dots" id="dots"></div>
       <button class="btn" id="btnPlay">PLAY ▶</button>
       <div class="stats">Best <b id="mBest">0</b> · Coins <b id="mCoins" class="coin">0</b></div>
-      <div class="row mini"><button class="chip" id="btnAch">🏆 <span id="achCount">0/5</span></button><button class="chip" id="btnHelp">❓ HOW TO PLAY</button></div>
+      <div class="row mini"><button class="chip" id="btnAch">🏆 <span id="achCount">0/5</span></button><button class="chip" id="btnHelp">❓ HOW TO PLAY</button><button class="chip" id="btnShare">📤 SHARE</button></div>
       <p class="hint" id="hint"></p>
     </div>
     <button id="info" aria-label="About this game">i</button>
@@ -1227,7 +1227,14 @@ pools.particle = makePool(() => ({ obj: new THREE.Mesh(G.box, pMat('#ffffff')), 
 // Single-instance FX meshes
 const cart = new THREE.Group();
 if (GLB['powerup-jugaad-thela']) { const m = GLB['powerup-jugaad-thela'].scene.clone(true); m.scale.setScalar(1.35); cart.add(m); } else cart.add(new THREE.Mesh(GEO.thela, VC));
-{ const glow = M(G.cylLo, new THREE.MeshBasicMaterial({ color: COL.teal, transparent: true, opacity: 0.45 }), 0, 0.04, 0, 0.8, 0.02, 0.9); cart.add(glow); }
+cart.traverse(o => { o.castShadow = true; });
+// soft hover glow + contact shadow, pinned to the road (not the cart) so it shrinks and fades as the cart lifts
+const cartShadow = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 2.6), new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, map: canvasTex(128, 128, (g, w) => {
+  const gr = g.createRadialGradient(w / 2, w / 2, 0, w / 2, w / 2, w / 2);
+  gr.addColorStop(0, 'rgba(20,40,45,0.55)'); gr.addColorStop(0.45, 'rgba(19,181,166,0.35)'); gr.addColorStop(1, 'rgba(19,181,166,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, w, w);
+}) }));
+cartShadow.rotation.x = -Math.PI / 2; cartShadow.renderOrder = 1; cartShadow.visible = false; scene.add(cartShadow);
 cart.visible = false; scene.add(cart);
 const stars = new THREE.Group();
 for (let i = 0; i < 3; i++) { const s = new THREE.Mesh(G.oct, basicMat(COL.marigold)); s.position.set(Math.cos(i * 2.1) * 0.45, 0, Math.sin(i * 2.1) * 0.45); stars.add(s); }
@@ -2209,7 +2216,7 @@ function updateCharacters(dt) {
     r.root.rotation.set(0, Math.PI, lean + wobble + (player.thela ? Math.sin(t * 7) * 0.08 : 0));
     r.root.visible = !(player.invulnT > 0 || power.press > 0) || Math.sin(t * 40) > -0.3;   // blink while invulnerable
     jiggleEyes(r, dt, (player.x - player.prevX) / Math.max(dt, 1e-3) * 0.01, -player.vy * 0.012);   // glance with lane switches and jumps
-    cart.visible = player.thela; if (player.thela) { cart.position.set(player.x, player.y + hover - 0.42 + 0.05, 0.05); cart.rotation.set(-0.12 * duck, 0, Math.sin(t * 7) * 0.08 * (1 - duck)); }
+    cart.visible = cartShadow.visible = player.thela; if (player.thela) { cart.position.set(player.x, player.y + hover - 0.42 + 0.05, 0.05); cartShadow.position.set(player.x, 0.03, 0.05); cartShadow.scale.setScalar(1 / (1 + player.y * 0.35)); cartShadow.material.opacity = clamp(1 - player.y * 0.25, 0.3, 1); cart.rotation.set(-0.12 * duck, 0, Math.sin(t * 7) * 0.08 * (1 - duck)); }
     stars.visible = player.stumbleT > CONFIG.STUMBLE_RECOVER - 1.6 || state === 'CAUGHT';
     if (stars.visible) { stars.position.set(player.x, player.y + (r.H || 2.1 * r.baseScale) + 0.25, 0); stars.rotation.y += dt * 6; }
     // Inspector: runs behind, waves the clipboard
@@ -2306,6 +2313,16 @@ function renderAch() {
     return `<div class="it ${done ? '' : 'off'}"><span class="em">${done ? a.e : '🔒'}</span><div><b>${a.name}</b><small>${a.desc}${done ? ' ✓' : ` (${Math.min(h, n)}/${n})`}</small></div></div>`; }).join('');
 }
 $('btnAch').onclick = () => { renderAch(); openPanel('achPanel'); };
+const SHARE = { title: 'Morcha Rush', text: 'I showed the Indian flag at Jantar Mantar 🇮🇳 and BHAAG! 🏃 Can you outrun Daroga Ji?', url: 'https://morcha-rush.vercel.app/' };
+$('btnShare').onclick = async () => {   // native share sheet in the apps (Android's WebView has no navigator.share), Web Share in browsers, else copy
+  track('share_click', { platform: PLATFORM });
+  const native = PLATFORM !== 'web' && window.Capacitor?.Plugins?.Share;
+  try {
+    if (native) await native.share({ ...SHARE, dialogTitle: 'Share Morcha Rush' });
+    else if (navigator.share) await navigator.share(SHARE);
+    else { await navigator.clipboard.writeText(`${SHARE.text} ${SHARE.url}`); toast('Link copied! Paste it anywhere 📋'); }
+  } catch (e) { if (!/cancel|abort/i.test(e?.name + e?.message)) toast(SHARE.url); }   // closing the share sheet isn't an error
+};
 $('btnHelp').onclick = () => openPanel('helpPanel');
 $('info').onclick = () => openPanel('aboutPanel');
 document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => b.closest('.panel').classList.add('hidden'));
@@ -2422,7 +2439,7 @@ gameLoaded.then(() => {
   const insp = buildGlbCharacter('inspector');
   if (insp) { scene.remove(inspector.root); inspector = insp; inspector.root.visible = false; scene.add(inspector.root); }
   fitPropBoxes();
-  if (GLB['powerup-jugaad-thela']) { cart.remove(cart.children[0]); const m = GLB['powerup-jugaad-thela'].scene.clone(true); m.scale.setScalar(1.35); cart.add(m); }
+  if (GLB['powerup-jugaad-thela']) { cart.remove(cart.children[0]); const m = GLB['powerup-jugaad-thela'].scene.clone(true); m.scale.setScalar(1.35); m.traverse(o => { o.castShadow = true; }); cart.add(m); }
   for (const type of [...Object.keys(OB), 'power']) { for (const it of pools[type].items) scene.remove(it.obj); pools[type].items.length = 0; }   // drop the stand-in obstacles
   buildDecor();   // the crowd switches to the runners
   prewarm(); modelsReady = true;
