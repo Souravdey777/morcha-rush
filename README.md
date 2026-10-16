@@ -18,7 +18,7 @@
 
 ## About
 
-Morcha Rush is a lane-switching endless runner in the spirit of Subway Surfers, set at a street march (*morcha*). You ring a gate's doorbell, shout "BHAAG!" and run. Dodge barricades, Section 144 signs, potholes and VIP convoys. Grab coins and power-ups. Stumble twice before you recover and Daroga Ji catches you and demands his *chai-paani*.
+Morcha Rush is a lane-switching endless runner in the spirit of Subway Surfers, set at a street march (*morcha*). You raise the tiranga at Jantar Mantar, shout "BHAAG!" and run. Dodge barricades, Section 144 signs, potholes and VIP convoys. Grab coins and power-ups. Stumble twice before you recover and Daroga Ji catches you and demands his *chai-paani*.
 
 The humour pokes at everyday red tape and petty corruption, never at real people or parties.
 
