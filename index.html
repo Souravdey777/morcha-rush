@@ -1769,7 +1769,7 @@ function rowGap() {
 function spawnObstacle(type, lane, z) {
   if (type === 'onion' && bijliT > 0) type = 'barricade';   // no onion carts during Bijli Gayi
   const ob = pools[type].get();
-  ob.lane = lane; ob.z = z; ob.hit = false; ob.dead = false; ob.passed = false; ob.extra = type === 'convoy' ? CONFIG.CONVOY_EXTRA_SPEED : 0; ob.warned = false;
+  ob.lane = lane; ob.z = z; ob.hit = false; ob.dead = false; ob.passed = false; ob.auto = false; ob.extra = type === 'convoy' ? CONFIG.CONVOY_EXTRA_SPEED : 0; ob.warned = false;
   ob.obj.position.set(laneX(lane), 0, z); ob.obj.rotation.set(0, 0, 0);
   return ob;
 }
@@ -2055,6 +2055,12 @@ function updateEntities(dt) {
     if (!playing) continue;
     // --- collision (forgiving boxes) ---
     const ox = laneX(ob.lane);
+    // cutting chai autopilot: hop low stuff, slide under signs; convoys/stations too tall, so they still get smashed in hit()
+    const dodge = ob.def.y0 > 1 ? slide : ob.def.y1 < 1.5 ? jump : null;
+    if (power.chai > 0 && dodge && !ob.auto && ob.lane === player.lane) {
+      const ta = (-ob.z - (ob.def.hz * 0.85 + 0.35)) / ws;   // seconds until it reaches the player
+      if (ta < 0.15) { ob.auto = true; dodge(); }
+    }
     if (Math.abs(ox - player.x) < 0.4 + 0.75 && Math.abs(ob.z) < ob.def.hz * 0.85 + 0.35 && pTop > ob.def.y0 && pBot < ob.def.y1 * 0.92) hit(ob);
     // --- near-miss ---
     if (!ob.passed && ob.z - ob.def.hz > 0.5) {
