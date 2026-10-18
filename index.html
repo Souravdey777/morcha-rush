@@ -1769,7 +1769,7 @@ function rowGap() {
 function spawnObstacle(type, lane, z) {
   if (type === 'onion' && bijliT > 0) type = 'barricade';   // no onion carts during Bijli Gayi
   const ob = pools[type].get();
-  ob.lane = lane; ob.z = z; ob.hit = false; ob.dead = false; ob.passed = false; ob.extra = type === 'convoy' ? CONFIG.CONVOY_EXTRA_SPEED : 0; ob.warned = false;
+  ob.lane = lane; ob.z = z; ob.hit = false; ob.dead = false; ob.passed = false; ob.auto = false; ob.extra = type === 'convoy' ? CONFIG.CONVOY_EXTRA_SPEED : 0; ob.warned = false; ob.fall = -1;
   ob.obj.position.set(laneX(lane), 0, z); ob.obj.rotation.set(0, 0, 0);
   return ob;
 }
@@ -1895,6 +1895,7 @@ function hit(ob) {
   if (power.dhol > 0 && ob.type === 'barricade') { knock(ob, 'DISHOOM!'); SFX.smash(); bonus += 5; shakeT = 0.12; return; }
   if (player.invulnT > 0) return;
   ob.hit = true;
+  if (ob.type !== 'pothole') ob.fall = 0;   // the wall goes down instead of you ghosting through it
   if (ob.type === 'convoy') knock(ob, null);         // never leave the player stuck inside a car
   if (ob.def.tearTrigger) {   // onion cart: just tears, no stumble, Daroga Ji stays put
     tears(); knock(ob, null); shakeT = 0.15; SFX.smash();
@@ -2044,6 +2045,12 @@ function updateEntities(dt) {
       continue;
     }
     if (ob.z - ob.def.hz > 14) { pools[type].release(ob); continue; }
+    if (ob.fall >= 0 && ob.fall < 1) {   // topple flat, away from the runner, with a little bounce on landing
+      ob.fall = Math.min(1, ob.fall + dt * 3.5);
+      const t = ob.fall, land = 0.7;
+      o.rotation.x = -1.5 * (t < land ? (t / land) ** 2 : 1 - 0.12 * Math.sin((t - land) / (1 - land) * Math.PI));
+      if (t >= land && t - dt * 3.5 < land) burst(o.position.x, 0.2, ob.z - 1, 12, ['#c9b79c', '#a8957a', '#e8dcc8'], { speed: 4, up: 2, size: 0.18, life: 0.6 });
+    }
     if (type === 'convoy') {
       const front = ob.z + ob.def.hz;
       // the convoy shoves anything in its lane out of the way
@@ -2055,6 +2062,12 @@ function updateEntities(dt) {
     if (!playing) continue;
     // --- collision (forgiving boxes) ---
     const ox = laneX(ob.lane);
+    // cutting chai autopilot: hop low stuff, slide under signs; convoys/stations too tall, so they still get smashed in hit()
+    const dodge = ob.def.y0 > 1 ? slide : ob.def.y1 < 1.5 ? jump : null;
+    if (power.chai > 0 && dodge && !ob.auto && ob.lane === player.lane) {
+      const ta = (-ob.z - (ob.def.hz * 0.85 + 0.35)) / ws;   // seconds until it reaches the player
+      if (ta < 0.15) { ob.auto = true; dodge(); }
+    }
     if (Math.abs(ox - player.x) < 0.4 + 0.75 && Math.abs(ob.z) < ob.def.hz * 0.85 + 0.35 && pTop > ob.def.y0 && pBot < ob.def.y1 * 0.92) hit(ob);
     // --- near-miss ---
     if (!ob.passed && ob.z - ob.def.hz > 0.5) {
