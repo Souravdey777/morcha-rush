@@ -495,6 +495,9 @@ function persist() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save));
 const GLB = {};
 const isScenery = n => n.startsWith('street-') || n.startsWith('pedestrian-');
 let sceneryLoaded, gameLoaded;
+// GLTFLoader skips ImageBitmap on Safari (textures upload black) but spots Safari by UA, which in-app browsers and
+// the Capacitor WKWebView omit. Every iOS browser is WebKit, so hide createImageBitmap there to force its TextureLoader path.
+if (/iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) window.createImageBitmap = undefined;
 {
   const packed = window.MORCHA_MODELS, names = window.MORCHA_MODEL_NAMES || [], loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
   const load = list => Promise.all(list.map(async name => {
