@@ -101,6 +101,7 @@ button{pointer-events:auto;font:inherit;cursor:pointer;border:0;color:inherit;ba
 .dots i{font-style:normal}.dots i.on{color:var(--pink)}
 .stats{margin-top:10px;font-size:14px;font-weight:700}
 .stats b{color:var(--pink)}
+#dare,#oDare{margin:0 0 10px;color:var(--pink);font-size:16px}
 .hint{margin-top:6px;font-size:12px;color:#6b5a7a}
 /* landscape: menu in a left column, character dances on the right */
 @media (min-aspect-ratio: 6/5){
@@ -251,6 +252,7 @@ h2{font-size:clamp(40px,11vw,64px);color:var(--pink);-webkit-text-stroke:2px var
         <button class="arrow" id="next" aria-label="Next character">▶</button>
       </div>
       <div class="dots" id="dots"></div>
+      <p class="stats hidden" id="dare"></p>
       <button class="btn" id="btnPlay">PLAY ▶</button>
       <div class="stats">Best <b id="mBest">0</b> · Coins <b id="mCoins" class="coin">0</b></div>
       <div class="row mini"><button class="chip" id="btnAch">🏆 <span id="achCount">0/5</span></button><button class="chip" id="btnHelp">❓ HOW TO PLAY</button><button class="chip" id="btnShare">📤 SHARE</button></div>
@@ -295,6 +297,7 @@ h2{font-size:clamp(40px,11vw,64px);color:var(--pink);-webkit-text-stroke:2px var
     <div class="card">
       <h2 id="oTitle">DETAINED!</h2>
       <div id="newBest" class="sticker hidden">NEW BEST!</div>
+      <p class="stats hidden" id="oDare"></p>
       <p class="quip" id="quip"></p>
       <div class="grid">
         <div><small>Score</small><b id="oScore">0</b></div>
@@ -304,6 +307,7 @@ h2{font-size:clamp(40px,11vw,64px);color:var(--pink);-webkit-text-stroke:2px var
       </div>
       <div class="stats" id="oPurse">Best <b id="oBest">0</b> · Coins <b id="oPurseAmt" class="coin">0</b></div>
       <button class="btn" id="btnRevive" style="width:100%;margin-bottom:10px"></button>
+      <button class="btn gold" id="btnShareRun" style="width:100%;margin-bottom:10px">🔥 DARE A FRIEND</button>
       <div class="row"><button class="btn alt" id="btnRestart">RESTART</button><button class="btn gold" id="btnMenu">MENU</button></div>
       <p class="sub" id="oWallet"></p>
     </div>
@@ -1658,6 +1662,8 @@ const SFX = {
 let state = 'MENU';            // MENU → PLAYING ⇄ PAUSED → CAUGHT → GAMEOVER → (PLAYING | MENU)
 let selIdx = Math.max(0, CHARS.findIndex(c => c.id === save.selected));
 let t = 0, runT = 0, speed = 0, ws = 0, dist = 0, coinsRun = 0, bonus = 0, spawnZ = 0, shakeT = 0, caughtT = 0, caughtSpeed = 0;
+let dodged = 0, dareDone = false;   // detention card grounds + friend's ?beat= target
+const DARE = Math.min(99999, Math.max(0, parseInt(new URLSearchParams(location.search).get('beat')) || 0));
 let chaseT = 0, chaseBeat = 0, introT = 0, revived = false, coinsBanked = 0, bijliT = 0, bijliDark = 0, tearsEnd = -99, nextBijli = 0, persistT = 0;
 let inspZ = CONFIG.INSPECTOR_FAR_Z, inspX = 0, runPhase = 0, warnOn = false, steamT = 0, lastLanding = 0;
 const power = { chai: 0, dhol: 0, press: 0, thali: 0, slow: 0 };
@@ -1676,7 +1682,7 @@ const isUnlocked = () => save.unlocked.includes(CHARS[selIdx].id);
 
 function resetRun() {
   for (const p of allPools) p.releaseAll();
-  t = 0; runT = 0; speed = CONFIG.START_SPEED; dist = 0; coinsRun = 0; bonus = 0; spawnZ = -30; shakeT = 0; caughtT = 0;
+  t = 0; runT = 0; speed = CONFIG.START_SPEED; dist = 0; coinsRun = 0; bonus = 0; dodged = 0; dareDone = false; spawnZ = -30; shakeT = 0; caughtT = 0;
   for (const k in power) power[k] = 0;
   Object.assign(player, { lane: 0, x: 0, y: 0, vy: 0, onGround: true, slideT: 0, stumbleT: 0, invulnT: 0, lastSwitch: -9, thela: false,
     jumpBuf: 0, slideBuf: false, cockyLife: CHARS[selIdx].id === 'cocky', dadiCD: 2, swingT: 0, landT: 0, prevX: 0 });
@@ -1749,6 +1755,11 @@ function gameOver() {
   $('oPurseAmt').textContent = save.totalCoins; $('oBestDist').textContent = save.bestDist + ' m';
   $('oWallet').textContent = 'Space to restart';
   show('over');
+  const m = Math.floor(dist);
+  $('oDare').classList.toggle('hidden', !DARE);
+  if (DARE) $('oDare').textContent = m >= DARE ? `You beat the dare by ${m - DARE} m 🔥` : `Short by ${DARE - m} m of the dare. Again?`;
+  $('btnShareRun').textContent = DARE && m >= DARE ? '🔥 DARE THEM BACK' : '🔥 DARE A FRIEND';
+  runCard = makeRunCard(m, s, isBest);   // drawn now so the Share tap can call navigator.share before its user gesture expires
 }
 function toast(msg) { const el = $('toast'); el.textContent = msg; el.classList.remove('hidden', 'go'); void el.offsetWidth; el.classList.add('go'); }
 function unlockAch(id) {
@@ -1964,6 +1975,7 @@ function updatePlaying(dt) {
   speed = Math.min(CONFIG.MAX_SPEED, speed + CONFIG.SPEED_RAMP * dt);
   ws = speed * (power.chai > 0 ? CONFIG.CHAI_SPEED_MULT : 1) * (power.slow > 0 ? CONFIG.BURGER_SLOW : 1);
   dist += ws * dt;
+  if (DARE && !dareDone && dist >= DARE) { dareDone = true; pop('DARE BEATEN! 🔥', player.x, 2.4, -1, 'teal'); SFX.power(); }
   for (const k in power) power[k] = Math.max(0, power[k] - dt);
 
   // --- player movement ---
@@ -2071,7 +2083,7 @@ function updateEntities(dt) {
     if (Math.abs(ox - player.x) < 0.4 + 0.75 && Math.abs(ob.z) < ob.def.hz * 0.85 + 0.35 && pTop > ob.def.y0 && pBot < ob.def.y1 * 0.92) hit(ob);
     // --- near-miss ---
     if (!ob.passed && ob.z - ob.def.hz > 0.5) {
-      ob.passed = true;
+      ob.passed = true; if (!ob.hit) dodged++;
       const nearMiss = !ob.hit && (ob.lane === player.lane || (Math.abs(ob.lane - player.lane) === 1 && runT - player.lastSwitch < CONFIG.NEAR_MISS_LANE_TIME));
       if (nearMiss && CHARS[selIdx].id === 'intern') { bonus += CONFIG.INTERN_BONUS; SFX.flash(); pop('LIKE & SHARE! +' + CONFIG.INTERN_BONUS, player.x, 2.4, -1, 'teal'); }
     }
@@ -2293,6 +2305,7 @@ function refreshMenu() {
   $('mBest').textContent = save.best.toLocaleString(); $('mCoins').textContent = save.totalCoins;
   $('achCount').textContent = ACH.filter(a => save.ach[a.id]).length + '/' + ACH.length;
   $('mute').textContent = save.muted ? '🔇' : '🔊';
+  if (DARE) { $('dare').textContent = `🔥 A friend bet you can't beat ${DARE} m`; $('dare').classList.remove('hidden'); }
   $('hint').textContent = isTouch ? 'Swipe ← → to switch lanes, ↑ to jump, ↓ to slide' : '← → / A D lanes · ↑ W jump · ↓ S slide · Space start · P pause';
 }
 // How to Play: swap each row's emoji for a snapshot of the real in-game model (once, after the models load)
@@ -2338,6 +2351,67 @@ $('btnShare').onclick = async () => {   // native share sheet in the apps (Andro
     else if (navigator.share) await navigator.share(SHARE);
     else { await navigator.clipboard.writeText(`${SHARE.text} ${SHARE.url}`); toast('Link copied! Paste it anywhere 📋'); }
   } catch (e) { if (!/cancel|abort/i.test(e?.name + e?.message)) toast(SHARE.url); }   // closing the share sheet isn't an error
+};
+let runCard = null;
+const loadImg = src => new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = no; i.src = src; });
+function dareText(m, best) {   // tone follows the run: roast yourself, dare, or brag
+  const dodgeCount = n => n === 1 ? '1 barricade' : n + ' barricades';
+  const l = m < 300 ? [`Detained in ${m} m 💀 Daroga Ji didn't even need to run. You'll do worse.`, `Got caught at ${m} m waving the tiranga 🇮🇳 My dadi runs faster. Your turn.`]
+    : best ? [`New record: ${m} m 😤 Come take it, if you can.`]
+    : m < 1500 ? [`Dodged detention for ${m} m at Jantar Mantar 🇮🇳 Bet you can't cross ${m} m.`, `Jumped ${dodgeCount(dodged)}, still got detained 🇮🇳 Beat my ${m} m, I dare you.`]
+    : [`${m} m and Daroga Ji is still panting 😤 You'd last 50 m, maximum.`];
+  return pick(l);
+}
+async function makeRunCard(m, sc, best) {   // 1080x1350 satirical detention slip for WhatsApp/Instagram/X
+  const W = 1080, H = 1350, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const g = cv.getContext('2d'), F = '"Arial Black","Arial Rounded MT Bold",Impact,sans-serif', S = 'system-ui,-apple-system,sans-serif';
+  const c = CHARS.find(x => x.id === save.selected) || CHARS[0];
+  const [logo, art] = await Promise.all([loadImg('brand/logo.png'), loadImg(`art/${GLB_NAME[c.id]}.webp`)]);
+  g.fillStyle = '#fff8ec'; g.fillRect(0, 0, W, H);
+  [['#ff9933', 0], ['#ffffff', 18], ['#138808', 36]].forEach(([col, y]) => { g.fillStyle = col; g.fillRect(0, y, W, 18); });
+  g.strokeStyle = '#2a1b3d'; g.lineWidth = 6; g.strokeRect(40, 90, W - 80, H - 130);
+  g.fillStyle = '#2a1b3d'; g.textAlign = 'left'; g.font = `900 46px ${F}`; g.fillText('THANA DAROGA JI', 80, 170);
+  g.font = `700 32px ${S}`; g.fillText(`DETENTION SLIP · No. ${m}/2026`, 80, 220, 640);
+  const lw = 220, lh = lw * logo.height / logo.width; g.drawImage(logo, W - 80 - lw, 120, lw, lh);
+  g.fillRect(80, 250, W - 160, 4);
+  g.fillStyle = '#ffd9b8'; g.fillRect(80, 290, 340, 400); g.strokeRect(80, 290, 340, 400);   // mugshot
+  const ah = 370, aw = Math.min(320, ah * art.width / art.height); g.drawImage(art, 250 - aw / 2, 305, aw, ah);
+  g.fillStyle = '#2a1b3d'; g.font = `700 30px ${S}`;
+  [['Accused', `${c.name} (${c.shout})`], ['Place', 'Jantar Mantar, New Delhi'], ['Ran', `${m} m before detention`], ['Score', sc.toLocaleString()]].forEach(([k, v], i) => {
+    g.fillStyle = '#6b5a7a'; g.font = `700 26px ${S}`; g.fillText(k.toUpperCase(), 460, 320 + i * 95);
+    g.fillStyle = '#2a1b3d'; g.font = `900 36px ${F}`; g.fillText(v, 460, 362 + i * 95, W - 540);
+  });
+  g.font = `900 40px ${F}`; g.fillText('GROUNDS FOR DETENTION', 80, 760);
+  g.font = `700 34px ${S}`;
+  [`Waving the tiranga at Jantar Mantar`, `Running from Daroga Ji for ${m} m`, `Jumping ${dodged} barricades, ignoring Section 144`, revived ? 'Paying chai-paani (bribery, admitted)' : 'Refusing to pay chai-paani']
+    .forEach((l, i) => g.fillText('☑  ' + l, 90, 820 + i * 58, W - 180));
+  g.fillStyle = '#6b5a7a'; g.font = `italic 700 28px ${S}`; g.fillText('Status: Form 26-A pending. Attested. Three copies.', 80, 1080, W - 160);
+  g.save(); g.translate(250, 625); g.rotate(-0.22); g.scale(0.78, 0.78); g.strokeStyle = g.fillStyle = '#e0245e'; g.lineWidth = 8;   // rubber stamp
+  g.strokeRect(-190, -62, 380, 110); g.font = `900 72px ${F}`; g.textAlign = 'center'; g.fillText('DETAINED', 0, 22); g.restore();
+  g.textAlign = 'center'; g.fillStyle = '#ff3d7f'; g.beginPath(); g.roundRect(80, 1130, W - 160, 150, 30); g.fill();
+  g.fillStyle = '#fff'; g.font = `900 52px ${F}`; g.fillText(`Bet you can't beat ${m} m 🔥`, W / 2, 1200, W - 220);
+  g.font = `700 34px ${S}`; g.fillText('Play free: morcha-rush.vercel.app', W / 2, 1252, W - 220);
+  const blob = await new Promise(r => cv.toBlob(r, 'image/jpeg', 0.9));
+  const url = `${SHARE.url}?beat=${m}`;
+  return { file: new File([blob], `morcha-rush-detained-${m}.jpg`, { type: 'image/jpeg' }), text: `${dareText(m, best)} #MainBhiCockroach #CJP #JantarMantar`, url };
+}
+$('btnShareRun').onclick = async () => {   // detention slip + dare caption + ?beat= link where files can be shared, else caption + link
+  const c = await runCard?.catch(() => null);
+  track('dare_click', { platform: PLATFORM, image: !!c, from_dare: !!DARE });
+  if (!c) return $('btnShare').onclick();
+  const data = { files: [c.file], text: `${c.text} ${c.url}` };
+  try {
+    if (navigator.canShare?.(data)) return await navigator.share(data);
+    const native = PLATFORM !== 'web' && window.Capacitor?.Plugins?.Share, fs = window.Capacitor?.Plugins?.Filesystem;
+    if (native) {   // apps: write the card to the cache dir and share it as a file (Android's WebView has no navigator.share)
+      const b64 = await new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result.split(',')[1]); fr.readAsDataURL(c.file); });
+      const uri = fs && (await fs.writeFile({ path: c.file.name, data: b64, directory: 'CACHE' }).catch(() => null))?.uri;
+      return await native.share({ title: 'Morcha Rush', text: `${c.text} ${c.url}`, ...(uri ? { files: [uri] } : { url: c.url }), dialogTitle: 'Dare a friend' });
+    }
+    if (navigator.share) return await navigator.share({ text: c.text, url: c.url });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(c.file); a.download = c.file.name; a.click();   // desktop: save the card, copy the dare
+    await navigator.clipboard.writeText(data.text); toast('Card saved, dare copied 📋');
+  } catch (e) { if (!/cancel|abort/i.test(e?.name + e?.message)) toast(c.url); }
 };
 $('btnHelp').onclick = () => openPanel('helpPanel');
 $('info').onclick = () => openPanel('aboutPanel');
