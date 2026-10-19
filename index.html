@@ -2400,8 +2400,12 @@ $('btnShareRun').onclick = async () => {   // detention slip + dare caption + ?b
   const data = { files: [c.file], text: `${c.text} ${c.url}` };
   try {
     if (navigator.canShare?.(data)) return await navigator.share(data);
-    const native = PLATFORM !== 'web' && window.Capacitor?.Plugins?.Share;
-    if (native) return await native.share({ title: 'Morcha Rush', text: c.text, url: c.url, dialogTitle: 'Dare a friend' });   // ponytail: text only, Capacitor needs @capacitor/filesystem to share the image
+    const native = PLATFORM !== 'web' && window.Capacitor?.Plugins?.Share, fs = window.Capacitor?.Plugins?.Filesystem;
+    if (native) {   // apps: write the card to the cache dir and share it as a file (Android's WebView has no navigator.share)
+      const b64 = await new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result.split(',')[1]); fr.readAsDataURL(c.file); });
+      const uri = fs && (await fs.writeFile({ path: c.file.name, data: b64, directory: 'CACHE' }).catch(() => null))?.uri;
+      return await native.share({ title: 'Morcha Rush', text: `${c.text} ${c.url}`, ...(uri ? { files: [uri] } : { url: c.url }), dialogTitle: 'Dare a friend' });
+    }
     if (navigator.share) return await navigator.share({ text: c.text, url: c.url });
     const a = document.createElement('a'); a.href = URL.createObjectURL(c.file); a.download = c.file.name; a.click();   // desktop: save the card, copy the dare
     await navigator.clipboard.writeText(data.text); toast('Card saved, dare copied 📋');
