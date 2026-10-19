@@ -101,7 +101,7 @@ button{pointer-events:auto;font:inherit;cursor:pointer;border:0;color:inherit;ba
 .dots i{font-style:normal}.dots i.on{color:var(--pink)}
 .stats{margin-top:10px;font-size:14px;font-weight:700}
 .stats b{color:var(--pink)}
-#dare{margin:0 0 10px;color:var(--pink);font-size:16px}
+#dare,#oDare{margin:0 0 10px;color:var(--pink);font-size:16px}
 .hint{margin-top:6px;font-size:12px;color:#6b5a7a}
 /* landscape: menu in a left column, character dances on the right */
 @media (min-aspect-ratio: 6/5){
@@ -297,6 +297,7 @@ h2{font-size:clamp(40px,11vw,64px);color:var(--pink);-webkit-text-stroke:2px var
     <div class="card">
       <h2 id="oTitle">DETAINED!</h2>
       <div id="newBest" class="sticker hidden">NEW BEST!</div>
+      <p class="stats hidden" id="oDare"></p>
       <p class="quip" id="quip"></p>
       <div class="grid">
         <div><small>Score</small><b id="oScore">0</b></div>
@@ -1755,7 +1756,8 @@ function gameOver() {
   $('oWallet').textContent = 'Space to restart';
   show('over');
   const m = Math.floor(dist);
-  if (DARE) { $('oWallet').textContent = m >= DARE ? `You beat the dare by ${m - DARE} m 🔥` : `Short by ${DARE - m} m of the dare. Again?`; }
+  $('oDare').classList.toggle('hidden', !DARE);
+  if (DARE) $('oDare').textContent = m >= DARE ? `You beat the dare by ${m - DARE} m 🔥` : `Short by ${DARE - m} m of the dare. Again?`;
   $('btnShareRun').textContent = DARE && m >= DARE ? '🔥 DARE THEM BACK' : '🔥 DARE A FRIEND';
   runCard = makeRunCard(m, s, isBest);   // drawn now so the Share tap can call navigator.share before its user gesture expires
 }
