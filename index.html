@@ -2230,7 +2230,7 @@ function updateCharacters(dt) {
   if (playing) {
     runPhase += dt * (7 + ws * 0.32) * (state === 'CAUGHT' ? 0.4 : 1);
     const mode = state === 'CAUGHT' ? 'caught' : !player.onGround ? 'jump' : player.thela ? (player.slideT > 0 ? 'duck' : 'sit') : player.slideT > 0 ? 'slide' : 'run';
-    animate(r, mode, dt, state === 'CAUGHT' ? 0.4 : clamp(ws / 16, 0.8, 1.8), runPhase);
+    animate(r, mode, dt, state === 'CAUGHT' ? 0 : clamp(ws / 16, 0.8, 1.8), runPhase);   // caught: clip frozen, no bobbing under the hands-up pose
     if (r.chappalArm && player.swingT > 0) r.chappalArm.rotation.set(-2.8 + (0.4 - player.swingT) * 6, 0, 0.3);
     // ducking on the thela: limbo flat back onto the cart while it squats, instead of sitting bolt upright through the sign
     const duck = player.duck = damp(player.duck || 0, player.thela && player.slideT > 0 ? 1 : 0, 16, dt);
@@ -2248,7 +2248,8 @@ function updateCharacters(dt) {
     stars.visible = player.stumbleT > CONFIG.STUMBLE_RECOVER - 1.6 || state === 'CAUGHT';
     if (stars.visible) { stars.position.set(player.x, player.y + (r.H || 2.1 * r.baseScale) + 0.25, 0); stars.rotation.y += dt * 6; }
     // Inspector: runs behind, waves the clipboard
-    animate(inspector, 'run', dt, state === 'CAUGHT' ? 1.2 : clamp(ws / 16, 0.8, 1.8) * 0.95, runPhase * 0.95 + 1);
+    const nabbed = state === 'CAUGHT';   // caught: he stops and stands; rate 0 freezes the run clip's hip bob so he doesn't hop
+    animate(inspector, nabbed ? 'stand' : 'run', dt, nabbed ? 0 : clamp(ws / 16, 0.8, 1.8) * 0.95, runPhase * 0.95 + 1);
     inspector.root.position.set(inspX, 0, inspZ); inspector.root.rotation.set(0, Math.PI, 0);
     jiggleEyes(inspector, dt, Math.sin(t * 0.8) * 0.1, 0);
   }
@@ -2279,6 +2280,7 @@ function update(dt) {
   if (state === 'PLAYING') updatePlaying(dt);
   else if (state === 'CAUGHT') {
     caughtT += dt; caughtSpeed *= Math.exp(-4 * dt); ws = caughtSpeed;
+    player.y = damp(player.y, 0, 12, dt); player.vy = 0; player.onGround = true;   // caught mid-jump: settle onto the road, no hovering
     inspZ = damp(inspZ, 1.3, 4, dt); inspX = damp(inspX, player.x, 6, dt);
     if (Math.random() < dt * 14) burst(player.x, 1.8, 0.8, 1, ['#ffffff', '#f2ecf7'], { speed: 3, up: 3, size: 0.25, life: 1, grav: 3, world: 0 });
     if (caughtT > 1.4) gameOver();
